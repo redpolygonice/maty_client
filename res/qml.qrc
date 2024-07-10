@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/MessageView.qml</file>
+        <file>qml/HistoryView.qml</file>
+        <file>img/user.png</file>
+        <file>qml/ContactsView.qml</file>
+        <file>qml/PanelButton.qml</file>
+        <file>qml/qtquickcontrols2.conf</file>
+        <file>qml/ActionsMenu.qml</file>
+        <file>qml/CardDlg.qml</file>
+        <file>qml/common.js</file>
+        <file>qml/LabelButton.qml</file>
+        <file>qml/ConfirmDlg.qml</file>
+        <file>qml/LoginForm.qml</file>
+        <file>qml/RegForm.qml</file>
+    </qresource>
+</RCC>
