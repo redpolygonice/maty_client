@@ -50,14 +50,15 @@ void Socket::closed()
 void Socket::textMessageReceived(const QString &message)
 {
 	LOG("Message received: " << message.toStdString());
+	emit messageReceived(message);
 }
 
 void Socket::errorOccurred(QAbstractSocket::SocketError error)
 {
-	LOGE("Error occurred: " << error);
+	LOGE("WebSocket error occurred: " << error);
 }
 
 void Socket::sslErrors(const QList<QSslError> &errors)
 {
-	LOGE("Ssl errors");
+	LOGE("WebSocket Ssl errors");
 }

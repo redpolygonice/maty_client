@@ -61,7 +61,7 @@ Rectangle {
 						if (sender)
 							imageFile = imgname
 						else
-							imageFile = contactsModel.card(0)[1]
+							imageFile = settings.params["image"]
 
 						if (imageFile === 'empty' || imageFile.length === 0 ||
 								imageFile === null || imageFile === undefined)

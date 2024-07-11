@@ -17,9 +17,34 @@ Settings::Settings(QObject *parent)
 	params_["port"] = 1978;
 }
 
+QString Settings::logPath() const
+{
+	QDir logDir = Settings::dataPath() + QDir::separator() + "log";
+	if (!logDir.exists())
+		logDir.mkpath(".");
+
+#ifdef WIN32
+	QString logPath = logDir.path().replace('/', '\\');
+#else
+	QString logPath = logDir.path();
+#endif
+
+	return logPath;
+}
+
 QString Settings::imagePath() const
 {
-	return Settings::dataPath() + QDir::separator() + "img";
+	QDir imgDir = Settings::dataPath() + QDir::separator() + "img";
+	if (!imgDir.exists())
+		imgDir.mkpath(".");
+
+#ifdef WIN32
+	QString imgPath = imgDir.path().replace('/', '\\');
+#else
+	QString imgPath = imgDir.path();
+#endif
+
+	return imgPath;
 }
 
 QString Settings::dataPath()
@@ -34,18 +59,33 @@ QString Settings::dataPath()
 	if (!dataDir.exists())
 		dataDir.mkpath(".");
 
-	return dataDir.path();
+#ifdef WIN32
+	QString dataPath = dataDir.path().replace('/', '\\');
+#else
+	QString dataPath = dataDir.path();
+#endif
+
+	return dataPath;
+}
+
+QString Settings::settingsPath() const
+{
+	QDir settingsDir = Settings::dataPath() + QDir::separator() + "settings";
+	if (!settingsDir.exists())
+		settingsDir.mkpath(".");
+	return settingsDir.path();
 }
 
 bool Settings::load()
 {
-	if (!QFile::exists(settingsFile_))
+	QString fileName = settingsPath() + QDir::separator() + settingsFile_;
+	if (!QFile::exists(fileName))
 	{
 		LOGW("Settings file does not exist!");
 		return false;
 	}
 
-	QFile file(settingsFile_);
+	QFile file(fileName);
 	if (!file.open(QIODevice::ReadOnly))
 	{
 		LOGE("Can't open settings file!");
@@ -66,9 +106,12 @@ bool Settings::load()
 	QJsonObject authObject = rootObject["Auth"].toObject();
 	if (!authObject.isEmpty())
 	{
+		params_["cid"] = authObject["cid"].toInt();
 		params_["autologin"] = authObject["autologin"].toBool();
 		params_["login"] = authObject["login"].toString();
 		params_["password"] = authObject["password"].toString();
+		params_["name"] = authObject["name"].toString();
+		params_["image"] = authObject["image"].toString();
 	}
 
 	QJsonObject netObject = rootObject["Net"].toObject();
@@ -84,7 +127,8 @@ bool Settings::load()
 
 bool Settings::save()
 {
-	QFile file(settingsFile_);
+	QString fileName = settingsPath() + QDir::separator() + settingsFile_;
+	QFile file(fileName);
 	if (!file.open(QIODevice::WriteOnly | QIODeviceBase::Truncate))
 	{
 		LOG("Can't open settings file for writing!");
@@ -93,9 +137,12 @@ bool Settings::save()
 
 	QJsonObject rootObject;
 	QJsonObject authObject;
+	authObject["cid"] = params_["cid"].toInt();
 	authObject["autologin"] = params_["autologin"].toBool();
 	authObject["login"] = params_["login"].toString();
 	authObject["password"] = params_["password"].toString();
+	authObject["name"] = params_["name"].toString();
+	authObject["image"] = params_["image"].toString();
 	rootObject["Auth"] = authObject;
 
 	QJsonObject netObject;
@@ -111,7 +158,11 @@ bool Settings::save()
 void Settings::saveAuthData(const QVariantMap &map)
 {
 	params_["autologin"] = map["autologin"].toBool();
-	params_["name"] = map["name"].toString();
 	params_["login"] = map["login"].toString();
-	params_["password"] = map["password"].toString();
+
+	if ( map.contains("name"))
+		params_["name"] = map["name"].toString();
+
+	if ( map.contains("password"))
+		params_["password"] = map["password"].toString();
 }

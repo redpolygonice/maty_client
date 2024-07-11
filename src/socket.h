@@ -17,6 +17,9 @@ public:
 	Socket();
 	~Socket();
 
+signals:
+	void messageReceived(const QString &message);
+
 private slots:
 	void connected();
 	void closed();

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Window
+import Qt.labs.platform
 import "common.js" as Common
 
 Window {
@@ -95,7 +96,7 @@ Window {
 				Layout.topMargin: 10
 				text: "Not registered?"
 				font.pointSize: Common.fontPointSize
-				color: "blue"
+				color: "steelblue"
 
 				MouseArea {
 					anchors.fill: parent
@@ -127,9 +128,7 @@ Window {
 						text: "OK"
 
 						onClicked: {
-							save()
-							mainWindow.visible = true
-							loginWindow.destroy()
+							auth()
 						}
 					}
 
@@ -158,14 +157,51 @@ Window {
 	{
 		if (settings.params["login"] !== undefined)
 			loginText.text = settings.params["login"];
-		if (settings.params["password"] !== undefined)
-			passwordText.text = settings.params["password"];
 	}
 
 	function save()
 	{
-		settings.saveLoginData({ "autologin": autologinCheck.checked, "login": loginText.text,
-								   "password": passwordText.text });
+		if (autologinCheck.checked)
+		{
+			settings.saveAuthData({ "autologin": autologinCheck.checked, "login": loginText.text,
+									   "password": passwordText.text });
+		}
+		else
+		{
+			settings.saveAuthData({ "autologin": autologinCheck.checked, "login": loginText.text});
+		}
+
 		settings.save()
+	}
+
+	function auth()
+	{
+		if (loginText.text === "" || passwordText.text === "")
+		{
+			messageBox.messageText = "You must fill login and password!"
+			messageBox.open()
+			return
+		}
+
+		dispatcher.authContact({ "login": loginText.text, "password": passwordText.text });
+
+		dispatcher.onAuth.connect(function(code) {
+			if (code === 0)
+			{
+				save();
+				mainWindow.visible = true
+				loginWindow.destroy()
+			}
+			else
+			{
+				messageBox.messageText = "Login or password is incorrect!"
+				messageBox.open()
+			}
+		})
+	}
+
+	ConfirmDlg {
+		id: messageBox
+		buttons: MessageDialog.Ok
 	}
 }

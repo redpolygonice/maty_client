@@ -14,9 +14,11 @@ Dialog {
 	height: 160
 	padding: 10
 	margins: 0
+	modal: true
 
 	property string titleText: ""
 	property string messageText: ""
+	property int buttons: MessageDialog.Ok | MessageDialog.Cancel
 
 	signal okClicked()
 
@@ -88,6 +90,9 @@ Dialog {
 					backcolor: "#eeeeee"
 					backcolorhover: "#dddddd"
 					text: "OK"
+					visible: {
+						return buttons & MessageDialog.Ok
+					}
 
 					onClicked: {
 						dialog.okClicked();
@@ -100,6 +105,10 @@ Dialog {
 					backcolor: "#eeeeee"
 					backcolorhover: "#dddddd"
 					text: "Cancel"
+
+					visible: {
+						return buttons & MessageDialog.Cancel
+					}
 
 					onClicked: {
 						reject()

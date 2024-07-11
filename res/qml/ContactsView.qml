@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import "common.js" as Common
@@ -16,6 +16,8 @@ Rectangle {
 
 	property int currentId: -1
 	property alias currentIndex: listView.currentIndex
+	property alias contactImage: contactImage
+	property alias contactText: contactText
 
 	Component {
 		id: delegate
@@ -50,7 +52,7 @@ Rectangle {
 					id: textName
 					text: name
 					font.pointSize: 13
-					color: "#4D4D4D"
+					color: Common.textColor
 					elide: Text.ElideRight
 					verticalAlignment: Text.AlignVCenter
 					horizontalAlignment: Text.AlignLeft
@@ -67,15 +69,15 @@ Rectangle {
 				cursorShape: Qt.PointingHandCursor
 
 				onClicked: (mouse) => {
-					currentId = id
-					listView.currentIndex = index
-					 mouse.accepted = false
+							   currentId = id
+							   listView.currentIndex = index
+							   mouse.accepted = false
 
-					if (mouse.button === Qt.RightButton)
-					{
-					contextMenu.popup()
-					}
-				}
+							   if (mouse.button === Qt.RightButton)
+							   {
+								   contextMenu.popup()
+							   }
+						   }
 			}
 		}
 	}
@@ -102,25 +104,111 @@ Rectangle {
 		header: ToolBar {
 			id: toolbar
 			width: parent.width
-			height: 50
+			height: 130
 
 			background: Rectangle {
 				color: Common.backColor1
 			}
 
-			RowLayout {
-				spacing: 10
+			Rectangle {
 				anchors.fill: parent
-				anchors.leftMargin: 5
-				anchors.bottomMargin: 10
-				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+				color: Common.backColor2
+				anchors.leftMargin: 3
+				anchors.topMargin: 7
 
-				PanelButton {
-					id: actionButton
-					text: "<b>....</b>"
-					ToolTip.text: "Actions .."
-					onClicked: {
-						actionsMenu.popup()
+				ColumnLayout {
+					anchors.fill: parent
+					spacing: 0
+
+					RowLayout {
+						spacing: 0
+						Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+
+						Rectangle {
+							id: imageRect
+							color: Common.backColor1
+							border.width: 1
+							border.color: "black"
+							Layout.leftMargin: 10
+							width: 65
+							height: 65
+
+							Image {
+								id: contactImage
+								fillMode: Image.PreserveAspectFit
+								sourceSize.width: 64
+								sourceSize.height: 64
+								sourceClipRect: Qt.rect(0, 0, 64, 64)
+								smooth: true
+								source: {
+									if (settings.params["image"] !== undefined)
+										return "file:///" + settings.imagePath() + "/" + settings.params["image"]
+									else
+										return ""
+								}
+
+								onVisibleChanged: {
+									if (visible)
+									{
+										if (settings.params["image"] !== undefined)
+											contactImage.source = "file:///" + settings.imagePath() + "/" + settings.params["image"]
+										else
+											contactImage.source = ""
+									}
+								}
+							}
+						}
+
+						TextArea {
+							id: contactText
+							text: {
+								if (settings.params["name"] !== undefined)
+									return settings.params["name"]
+								else
+									return ""
+							}
+							readOnly: true
+							Layout.fillWidth: true
+							width: 110
+							wrapMode: Text.Wrap
+							font.pointSize: 11
+							color: Common.textColor
+
+							onVisibleChanged: {
+								if (visible)
+								{
+									if (settings.params["name"] !== undefined)
+										contactText.text = settings.params["name"]
+									else
+										contactText.text = ""
+								}
+							}
+						}
+
+						PanelButton {
+							id: actionButton
+							Layout.rightMargin: 10
+							text: "<b>....</b>"
+							onClicked: {
+								actionsMenu.popup()
+							}
+						}
+					}
+
+					TextField {
+						id: searchText
+						text: ""
+						Layout.leftMargin: 10
+						Layout.rightMargin: 10
+						Layout.bottomMargin: 2
+						Layout.fillWidth: true
+						Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+						font.pointSize: Common.fontPointSize
+						implicitHeight: 30
+						color: Common.textColor
+						background: Rectangle {
+							color: Common.backColor1
+						}
 					}
 				}
 			}

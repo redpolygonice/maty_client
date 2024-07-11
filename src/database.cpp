@@ -44,9 +44,9 @@ bool Database::createTables()
 {
 	QSqlQuery query(db_);
 	if (!query.exec("CREATE TABLE " + QString(kHistoryName) + " ("
-					"id INTEGER PRIMARY KEY AUTOINCREMENT, "
-					"cid INTEGER KEY NOT NULL, "
-					"sender BOOLEAN NOT NULL, "
+					"id INTEGER PRIMARY KEY AUTOINCREMENT,"
+					"cid INTEGER KEY NOT NULL,"
+					"sender BOOLEAN NOT NULL,"
 					"text TEXT NOT NULL,"
 					"ts TIMESTAMP NOT NULL)"))
 	{
@@ -56,8 +56,10 @@ bool Database::createTables()
 
 	if (!query.exec("CREATE TABLE " + QString(kContactsName) + " ("
 					"id INTEGER PRIMARY KEY AUTOINCREMENT, "
+					"cid INTEGER KEY NOT NULL, "
 					"name VARCHAR(50) NOT NULL,"
-					"imgname VARCHAR(50),"
+					"login VARCHAR(50) NOT NULL,"
+					"image VARCHAR(50),"
 					"phone VARCHAR(20),"
 					"ts TIMESTAMP NOT NULL)"))
 	{
@@ -65,7 +67,6 @@ bool Database::createTables()
 		return false;
 	}
 
-	appendContact({"me", "empty", ""});
 	return true;
 }
 

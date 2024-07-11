@@ -22,6 +22,7 @@ ApplicationWindow {
 		else
 			visible = true
 
+
 		x = Screen.width / 2 - mainWindow.width / 2
 		y = Screen.height / 2 - mainWindow.height / 2
 		historyModel.update(-1)
@@ -60,7 +61,7 @@ ApplicationWindow {
 			id: contactsView
 			SplitView.fillWidth: false
 			SplitView.fillHeight: true
-			SplitView.minimumWidth: 200
+			SplitView.minimumWidth: 250
 		}
 
 		Rectangle {

@@ -24,6 +24,7 @@ signals:
 	void paramsChanged();
 
 public:
+	QString logPath() const;
 	Q_INVOKABLE QString imagePath() const;
 	Q_INVOKABLE void saveAuthData(const QVariantMap &map);
 	Q_INVOKABLE bool save();
@@ -34,6 +35,9 @@ public:
 
 	QVariantMap &params() { return params_; }
 	void setParams(const QVariantMap &map) { params_ = map; }
+
+private:
+	QString settingsPath() const;
 };
 
 using SettingsPtr = QSharedPointer<Settings>;

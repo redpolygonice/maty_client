@@ -16,11 +16,27 @@ class Dispatcher : public QObject
 
 	Q_OBJECT
 
+public:
+	enum class Action
+	{
+		None,
+		Registration,
+		Auth,
+		Message
+	};
+
+	enum class ErrorCode
+	{
+		Ok,
+		Error,
+		LoginExists,
+		NoLogin,
+		Password
+	};
+
 private:
 	std::atomic_bool active_;
 	QObject *rootItem_;
-	QScopedPointer<QThread> thread_;
-	Message message_;
 	Socket socket_;
 
 private:
@@ -30,21 +46,21 @@ public:
 	virtual ~Dispatcher();
 
 signals:
-	void newMessage(const QString &text);
 	void registration(int code);
+	void auth(int code);
 
 private slots:
-	void getText(int cid, const QString &text);
 	void messageReceived(const QString &message);
 
 public:
 	bool start(QObject *rootItem);
 	void stop();
 	Q_INVOKABLE void regContact(const QVariantMap &data);
+	Q_INVOKABLE void authContact(const QVariantMap &data);
 	Q_INVOKABLE void sendMessage(const QVariantMap &data);
 
 private:
-	void run();
+	QString convertImage(const QString &fileName) const;
 };
 
 using DispatcherPtr = QSharedPointer<Dispatcher>;

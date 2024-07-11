@@ -2,21 +2,24 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Window
+import Qt.labs.platform
 import "common.js" as Common
 
 Window {
 	id: regWindow
 	visible: false
 	width: 300
-	height: 300
+	height: 365
 	x: Screen.width / 2 - regWindow.width / 2
 	y: Screen.height / 2 - regWindow.height / 2
 	modality: Qt.ApplicationModal
 	flags: Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
 
+	property string imageFile: ""
+
 	onClosing: (close) => {
-		Qt.quit()
-	}
+				   Qt.quit()
+			   }
 
 	ColumnLayout {
 		anchors.fill: parent
@@ -91,6 +94,46 @@ Window {
 				}
 			}
 
+
+
+			RowLayout {
+
+				Rectangle {
+					id: imageRect
+					Layout.topMargin: 10
+					color: Common.backColor1
+					border.width: 2
+					border.color: "black"
+					width: 64
+					height: 64
+
+					Image {
+						id: image
+						fillMode: Image.PreserveAspectFit
+						sourceSize.width: 64
+						sourceSize.height: 64
+						smooth: true
+						source: ""
+					}
+				}
+
+				Label {
+					Layout.leftMargin: 15
+					text: "Load image from file"
+					font.pointSize: Common.fontPointSize
+					color: "steelblue"
+
+					MouseArea {
+						anchors.fill: parent
+						hoverEnabled: true
+						cursorShape: Qt.PointingHandCursor
+						onClicked: {
+							loadImage()
+						}
+					}
+				}
+			}
+
 			Rectangle {
 				Layout.fillHeight: true
 				Layout.fillWidth: true
@@ -135,16 +178,25 @@ Window {
 		nameText.text = ""
 		loginText.text = ""
 		passwordText.text = ""
+		image.source = ""
 	}
 
 	function register()
 	{
+		if (nameText.text === "" || loginText.text === "" || passwordText.text === "")
+		{
+			messageBox.messageText = "You must fill all fields!"
+			messageBox.open()
+			return
+		}
+
 		dispatcher.regContact({ "name": nameText.text, "login": loginText.text,
-								  "password": passwordText.text });
+								  "password": passwordText.text, "image": imageFile, "phone": "" });
 
 		dispatcher.onRegistration.connect(function(code) {
 			if (code === 0)
 			{
+				save()
 				mainWindow.login()
 				regWindow.destroy()
 			}
@@ -153,8 +205,33 @@ Window {
 
 	function save()
 	{
-		settings.saveAuthData({ "autologin": false, "name": nameText.text,
-								   "login": loginText.text, "password": passwordText.text });
+		settings.saveAuthData({ "autologin": false, "name": nameText.text, "login": loginText.text });
 		settings.save()
+	}
+
+	function loadImage()
+	{
+		fileLoadDialog.open()
+	}
+
+	FileDialog {
+		id: fileLoadDialog
+		title: "Open image file"
+		fileMode: FileDialog.OpenFile
+		nameFilters: [ "Image files (*.png *.jpg *.jpeg", "All files (*.*)" ]
+		selectedNameFilter.index: 0
+		folder: {
+			return StandardPaths.writableLocation(StandardPaths.HomeLocation)
+		}
+
+		onAccepted: {
+			image.source = file;
+			imageFile = file.toString().replace("file://", "")
+		}
+	}
+
+	ConfirmDlg {
+		id: messageBox
+		buttons: MessageDialog.Ok
 	}
 }

@@ -1,4 +1,5 @@
 #include "log.h"
+#include "settings.h"
 
 #include <iostream>
 #include <ctime>
@@ -9,7 +10,13 @@ LoggerPtr Log::_instance = nullptr;
 Log::Log()
 	: _verb(Level::Debug)
 {
-	std::string logName = "log-" + currentTime() + ".txt";
+#ifdef WIN32
+	std::string logName = GetSettings()->logPath().toStdString() +
+						  "\\log-" + currentTime() + ".txt";
+#else
+	std::string logName = GetSettings()->logPath().toStdString() +
+						  "/log-" + currentTime() + ".txt";
+#endif
 
 	_stream.open(logName, std::ios_base::out | std::ios_base::trunc);
 	if (!_stream.is_open())
