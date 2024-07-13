@@ -51,7 +51,7 @@ Rectangle {
 				spacing: 10
 
 				Image {
-					id: image
+					id: rowImage
 					fillMode: Image.PreserveAspectFit
 					sourceSize.width: 24
 					sourceSize.height: 24
@@ -154,27 +154,27 @@ Rectangle {
 				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
 				Image {
-					id: image
+					id: topImage
 					fillMode: Image.PreserveAspectFit
 					sourceSize.width: 36
 					sourceSize.height: 36
 					smooth: true
 					source: {
-						if (contactsModel === null)
-							return ""
+						return ""
+						// if (listView.model === null)
+						// 	return ""
 
-						var imgname = contactsModel.card(contactsView.currentIndex)[1]
-						if (imgname === 'empty' || imgname.length === 0 ||
-								imgname === null || imgname === undefined)
-							return ""
-						else
-							return "file:///" + settings.imagePath() + "/" + imgname
+						// if (image === 'empty' || image.length === 0 ||
+						// 		image === null || image === undefined)
+						// 	return ""
+						// else
+						// 	return "file:///" + settings.imagePath() + "/" + image
 					}
 				}
 
 				Text {
 					id: text
-					text: contactsModel === null ? "" : contactsModel.card(contactsView.currentIndex)[0]
+					text: "" //contactsModel === null ? "" : contactsModel.card(contactsView.currentIndex)[0]
 					font.pointSize: 14
 					font.bold: true
 					color: "#4D4D4D"
@@ -282,7 +282,6 @@ Rectangle {
 
 	ConfirmDlg {
 		id: removeDlg
-		titleText: "Removing record"
 		messageText: "Remove current history record ?"
 
 		onOkClicked: {

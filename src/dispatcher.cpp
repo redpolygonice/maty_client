@@ -2,6 +2,7 @@
 #include "database.h"
 #include "log.h"
 #include "settings.h"
+#include "crypt.h"
 
 #include <QDebug>
 #include <QVariantList>
@@ -10,11 +11,14 @@
 #include <QUuid>
 #include <QFile>
 #include <QDir>
+#include <QtConcurrent>
+#include <QFuture>
 
 Dispatcher::Dispatcher(QObject *parent)
 	: QObject{parent}
-	, active_(false)
+	, connected_(false)
 	, rootItem_(nullptr)
+	, socket_(QSharedPointer<Socket>::create())
 {
 }
 
@@ -26,14 +30,22 @@ Dispatcher::~Dispatcher()
 bool Dispatcher::start(QObject *rootItem)
 {
 	rootItem_ = rootItem;
-	socket_.open();
-	connect(&socket_, &Socket::messageReceived, this, &Dispatcher::messageReceived);
+	socket_->open();
+	connect(socket_.get(), &Socket::opened, this, &Dispatcher::connected, Qt::QueuedConnection);
 	return true;
 }
 
 void Dispatcher::stop()
 {
-	socket_.close();
+	socket_->close();
+}
+
+void Dispatcher::connected()
+{
+	LOG("WebSocket connected!");
+	connected_ = true;
+	socket_->sendMessage("Hello!");
+	connect(socket_.get(), &Socket::messageReceived, this, &Dispatcher::processMessage);
 }
 
 void Dispatcher::regContact(const QVariantMap &data)
@@ -41,16 +53,47 @@ void Dispatcher::regContact(const QVariantMap &data)
 	QJsonObject object = QJsonObject::fromVariantMap(data);
 	object["action"] = static_cast<int>(Action::Registration);
 	if (!object["image"].toString().isEmpty())
-		object["image"] = convertImage(object["image"].toString());
-	socket_.sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+		object["image"] = convertImageToBase64(object["image"].toString());
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
-void Dispatcher::authContact(const QVariantMap &data)
+void Dispatcher::authContact(const QVariantMap &data, bool autologin)
 {
-	QJsonObject object = QJsonObject::fromVariantMap(data);
-	object["action"] = static_cast<int>(Action::Auth);
-	object["cid"] = GetSettings()->params()["cid"].toInt();
-	socket_.sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+	auto authServer = [this, data, autologin]() {
+		QJsonObject object = QJsonObject::fromVariantMap(data);
+		object["action"] = static_cast<int>(Action::Auth);
+		object["cid"] = GetSettings()->params()["cid"].toInt();
+
+		if (autologin)
+		{
+			Crypt crypt;
+			QByteArray encrypted = QByteArray::fromHex(data["password"].toString().toLocal8Bit());
+			object["password"] = crypt.decrypt(encrypted);
+		}
+
+		socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+	};
+
+	emit connectState(static_cast<int>(ConnectState::Connecting));
+	LOG("Connecting to server ..");
+	QFuture<bool> future = QtConcurrent::run([this]() {
+		int count = 30;
+		while (!connected_ && count-- > 0)
+			QThread::msleep(100);
+		return connected_;
+	});
+
+	if (future.result())
+	{
+		emit connectState(static_cast<int>(ConnectState::Connected));
+		LOG("Connected to server!");
+		authServer();
+	}
+	else
+	{
+		emit connectState(static_cast<int>(ConnectState::NotConneted));
+		LOGW("Not connected!");
+	}
 }
 
 void Dispatcher::sendMessage(const QVariantMap &data)
@@ -58,10 +101,20 @@ void Dispatcher::sendMessage(const QVariantMap &data)
 	QJsonObject object = QJsonObject::fromVariantMap(data);
 	object["action"] =static_cast<int>(Action::Message);
 	object["cid"] = GetSettings()->params()["cid"].toInt();
-	socket_.sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
-void Dispatcher::messageReceived(const QString &message)
+void Dispatcher::searchContact(const QString &text)
+{
+	LOG("Search contact: " << text.toStdString());
+	QJsonObject object;
+	object["action"] =static_cast<int>(Action::Search);
+	object["cid"] = GetSettings()->params()["cid"].toInt();
+	object["text"] = text;
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
+void Dispatcher::processMessage(const QString &message)
 {
 	QJsonParseError error;
 	QJsonDocument document = QJsonDocument::fromJson(message.toUtf8(), &error);
@@ -87,6 +140,27 @@ void Dispatcher::messageReceived(const QString &message)
 		emit auth(static_cast<int>(code));
 	}
 
+	else if (action == Action::Search)
+	{
+		SearchResult result = static_cast<SearchResult>(rootObject["searchResult"].toInt());
+		if (result == SearchResult::Found)
+		{
+			QJsonArray contactsArray = rootObject["contacts"].toArray();
+			QJsonArray contacts;
+			for (const QJsonValue &contact : contactsArray)
+			{
+				QJsonObject object = contact.toObject();
+				object["image"] = convertImageFromBase84(object["image"].toString());
+				contacts.push_back(object);
+			}
+
+			rootObject["contacts"] = contacts;
+			searchModel_.update(rootObject);
+		}
+
+		emit searched(static_cast<int>(result));
+	}
+
 	else if (action == Action::Message)
 	{
 		int cid = rootObject["cid"].toInt();
@@ -96,7 +170,7 @@ void Dispatcher::messageReceived(const QString &message)
 	}
 }
 
-QString Dispatcher::convertImage(const QString &fileName) const
+QString Dispatcher::convertImageToBase64(const QString &fileName) const
 {
 	QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
 	QString oldName = fileName;
@@ -119,4 +193,22 @@ QString Dispatcher::convertImage(const QString &fileName) const
 	QByteArray imageData = file.readAll();
 	QString encoded = QString(imageData.toBase64());
 	return encoded;
+}
+
+QString Dispatcher::convertImageFromBase84(const QString &base64) const
+{
+	QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
+	QByteArray imageData = QByteArray::fromBase64(base64.toLocal8Bit());
+	QString fileName = GetSettings()->imagePath() + QDir::separator() + uuid;
+
+	QFile file(fileName);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+	{
+		LOGW("Can't create image file " << fileName.toStdString());
+		return "";
+	}
+
+	file.write(imageData);
+	file.flush();
+	return uuid;
 }

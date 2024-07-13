@@ -1,5 +1,6 @@
 #include "settings.h"
 #include "log.h"
+#include "crypt.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -30,6 +31,21 @@ QString Settings::logPath() const
 #endif
 
 	return logPath;
+}
+
+QString Settings::tempPath() const
+{
+	QDir tempDir = Settings::dataPath() + QDir::separator() + "temp";
+	if (!tempDir.exists())
+		tempDir.mkpath(".");
+
+#ifdef WIN32
+	QString tempPath = tempDir.path().replace('/', '\\');
+#else
+	QString tempPath = tempDir.path();
+#endif
+
+	return tempPath;
 }
 
 QString Settings::imagePath() const
@@ -163,6 +179,10 @@ void Settings::saveAuthData(const QVariantMap &map)
 	if ( map.contains("name"))
 		params_["name"] = map["name"].toString();
 
-	if ( map.contains("password"))
-		params_["password"] = map["password"].toString();
+	if (map.contains("password"))
+	{
+		Crypt crypt;
+		QByteArray encrypted = crypt.encrypt(map["password"].toString());
+		params_["password"] = encrypted.toHex();
+	}
 }

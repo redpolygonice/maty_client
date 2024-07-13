@@ -183,7 +183,7 @@ Window {
 			return
 		}
 
-		dispatcher.authContact({ "login": loginText.text, "password": passwordText.text });
+		dispatcher.authContact({ "login": loginText.text, "password": passwordText.text }, false);
 
 		dispatcher.onAuth.connect(function(code) {
 			if (code === 0)

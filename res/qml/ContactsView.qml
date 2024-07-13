@@ -16,8 +16,8 @@ Rectangle {
 
 	property int currentId: -1
 	property alias currentIndex: listView.currentIndex
-	property alias contactImage: contactImage
-	property alias contactText: contactText
+	property string contactImageSrc: ""
+	property string contactNameText: ""
 
 	Component {
 		id: delegate
@@ -34,17 +34,17 @@ Rectangle {
 				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
 				Image {
-					id: image
+					id: imageId
 					fillMode: Image.PreserveAspectFit
 					sourceSize.width: 36
 					sourceSize.height: 36
 					smooth: true
 					source: {
-						if (imgname === 'empty' || imgname.length === 0 ||
-								imgname === null || imgname === undefined)
+						if (image === 'empty' || image.length === 0 ||
+								image === null || image === undefined)
 							return "qrc:///img/user.png"
 						else
-							return "file:///" + settings.imagePath() + "/" + imgname
+							return "file:///" + settings.imagePath() + "/" + image
 					}
 				}
 
@@ -85,7 +85,7 @@ Rectangle {
 	ListView {
 		id: listView
 		anchors.fill: parent
-		model: contactsModel
+		model: searchModel
 		delegate: delegate
 		focus: true
 
@@ -101,16 +101,33 @@ Rectangle {
 			policy: ScrollBar.AsNeeded
 		}
 
+		Component.onCompleted: {
+			listView.currentIndex = -1
+			dispatcher.onSearched.connect(function(result) {
+				if (result === 0)
+				{
+					listView.model = searchModel;
+					listView.update()
+				}
+				else
+				{
+					listView.model = contactsModel;
+					listView.update()
+				}
+			})
+		}
+
 		header: ToolBar {
 			id: toolbar
 			width: parent.width
-			height: 130
+			height: 125
 
 			background: Rectangle {
 				color: Common.backColor1
 			}
 
 			Rectangle {
+				id: contactRect
 				anchors.fill: parent
 				color: Common.backColor2
 				anchors.leftMargin: 3
@@ -140,49 +157,29 @@ Rectangle {
 								sourceSize.height: 64
 								sourceClipRect: Qt.rect(0, 0, 64, 64)
 								smooth: true
-								source: {
-									if (settings.params["image"] !== undefined)
-										return "file:///" + settings.imagePath() + "/" + settings.params["image"]
-									else
-										return ""
-								}
+								source: contactImageSrc
 
-								onVisibleChanged: {
-									if (visible)
-									{
-										if (settings.params["image"] !== undefined)
-											contactImage.source = "file:///" + settings.imagePath() + "/" + settings.params["image"]
-										else
-											contactImage.source = ""
-									}
+								MouseArea {
+									id: imageArea
+									anchors.fill: parent
+									acceptedButtons: Qt.LeftButton | Qt.RightButton
+									hoverEnabled: true
+									cursorShape: Qt.PointingHandCursor
+									onClicked: (mouse) => {
+											   }
 								}
 							}
 						}
 
 						TextArea {
 							id: contactText
-							text: {
-								if (settings.params["name"] !== undefined)
-									return settings.params["name"]
-								else
-									return ""
-							}
+							text: contactNameText
 							readOnly: true
 							Layout.fillWidth: true
 							width: 110
 							wrapMode: Text.Wrap
 							font.pointSize: 11
 							color: Common.textColor
-
-							onVisibleChanged: {
-								if (visible)
-								{
-									if (settings.params["name"] !== undefined)
-										contactText.text = settings.params["name"]
-									else
-										contactText.text = ""
-								}
-							}
 						}
 
 						PanelButton {
@@ -195,27 +192,45 @@ Rectangle {
 						}
 					}
 
-					TextField {
-						id: searchText
-						text: ""
-						Layout.leftMargin: 10
-						Layout.rightMargin: 10
-						Layout.bottomMargin: 2
-						Layout.fillWidth: true
-						Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-						font.pointSize: Common.fontPointSize
-						implicitHeight: 30
-						color: Common.textColor
-						background: Rectangle {
-							color: Common.backColor1
+					RowLayout {
+						spacing: 0
+
+						TextField {
+							id: searchText
+							text: "ale"
+							placeholderText: "Search .."
+							Layout.leftMargin: 11
+							Layout.bottomMargin: 5
+							Layout.fillWidth: true
+							Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+							font.pointSize: Common.fontPointSize
+							implicitHeight: 30
+							color: Common.textColor
+							background: Rectangle {
+								color: Common.backColor1
+							}
+
+							Keys.onPressed: (event)=> {
+								if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return)
+								{
+									if (searchText.text !== "")
+										dispatcher.searchContact(searchText.text)
+								}
+							}
+						}
+
+						PanelButton {
+							id: searchCoseButton
+							Layout.rightMargin: 10
+							Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+							text: "<b>X</b>"
+							onClicked: {
+								searchText.text = ""
+							}
 						}
 					}
 				}
 			}
-		}
-
-		Component.onCompleted: {
-			listView.currentIndex = -1
 		}
 
 		onCountChanged: {
@@ -323,5 +338,18 @@ Rectangle {
 	{
 		database.clearHistory(currentId)
 		historyModel.update(contactsView.currentId)
+	}
+
+	function setContactInfo()
+	{
+		if (settings.params["image"] === undefined || settings.params["image"] === "")
+			contactImageSrc = ""
+		else
+			contactImageSrc = "file:///" + settings.imagePath() + "/" + settings.params["image"]
+
+		if (settings.params["name"] === undefined || settings.params["name"] === "")
+			contactNameText = ""
+		else
+			contactNameText = settings.params["name"]
 	}
 }

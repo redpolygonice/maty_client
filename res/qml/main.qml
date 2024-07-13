@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import Qt.labs.platform
 import "common.js" as Common
 
 ApplicationWindow {
@@ -14,19 +15,30 @@ ApplicationWindow {
 	property variant regForm
 	property variant loginForm
 
-	signal newText(int id, string text)
+	Timer {
+		id: timer
+		interval: 100; running: false; repeat: false
+		onTriggered: auth()
+	}
 
 	Component.onCompleted: {
-		if (!settings.params["autologin"])
-			login()
-		else
+		if (settings.params["autologin"])
+		{
 			visible = true
-
+			timer.start()
+		}
+		else
+			login()
 
 		x = Screen.width / 2 - mainWindow.width / 2
 		y = Screen.height / 2 - mainWindow.height / 2
 		historyModel.update(-1)
 		contactsModel.update()
+	}
+
+	onVisibleChanged: {
+		if (visible)
+			contactsView.setContactInfo()
 	}
 
 	Component {
@@ -45,6 +57,11 @@ ApplicationWindow {
 
 	CardDlg {
 		id: cardDlg
+	}
+
+	ConfirmDlg {
+		id: messageDlg
+		buttons: MessageDialog.Ok
 	}
 
 	SplitView {
@@ -98,5 +115,28 @@ ApplicationWindow {
 	{
 		loginForm = loginComponent.createObject(mainWindow)
 		loginForm.show()
+	}
+
+	function auth()
+	{
+		if (settings.params["login"] === "" || settings.params["password"] === "")
+		{
+			messageDlg.messageText = "Login or password is empty!"
+			messageDlg.open()
+		}
+
+		dispatcher.authContact({ "login": settings.params["login"], "password": settings.params["password"] }, true);
+
+		dispatcher.onAuth.connect(function(code) {
+			if (code === 0)
+			{
+				mainWindow.visible = true
+			}
+			else
+			{
+				messageDlg.messageText = "Not connected. Login or password is incorrect!"
+				messageDlg.open()
+			}
+		})
 	}
 }

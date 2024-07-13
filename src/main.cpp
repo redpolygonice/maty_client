@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
 	engine.rootContext()->setContextProperty("database", GetDatabase().get());
 	engine.rootContext()->setContextProperty("settings", GetSettings().get());
 	engine.rootContext()->setContextProperty("dispatcher", GetDispatcher().get());
+	engine.rootContext()->setContextProperty("searchModel", GetDispatcher()->searchModel());
 
 	loadMain();
 	return app.exec();

@@ -19,6 +19,7 @@ public:
 
 signals:
 	void messageReceived(const QString &message);
+	void opened();
 
 private slots:
 	void connected();
@@ -31,6 +32,7 @@ public:
 	bool open();
 	void close();
 	void sendMessage(const QString &message);
+	bool valid() const { return socket_.isValid(); }
 };
 
 #endif // SOCKET_H

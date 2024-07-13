@@ -1,14 +1,16 @@
 #ifndef DISPATCHER_H
 #define DISPATCHER_H
 
-#include "message.h"
 #include "socket.h"
+#include "searchmodel.h"
 
 #include <QObject>
 #include <QThread>
 #include <QScopedPointer>
 #include <QSharedPointer>
 #include <QVariantMap>
+
+using SocketPtr = QSharedPointer<Socket>;
 
 class Dispatcher : public QObject
 {
@@ -22,7 +24,8 @@ public:
 		None,
 		Registration,
 		Auth,
-		Message
+		Message,
+		Search
 	};
 
 	enum class ErrorCode
@@ -34,10 +37,24 @@ public:
 		Password
 	};
 
+	enum class ConnectState
+	{
+		Connecting,
+		Connected,
+		NotConneted
+	};
+
+	enum class SearchResult
+	{
+		Found,
+		NotFound
+	};
+
 private:
-	std::atomic_bool active_;
+	bool connected_;
 	QObject *rootItem_;
-	Socket socket_;
+	SocketPtr socket_;
+	SearchModel searchModel_;
 
 private:
 	explicit Dispatcher(QObject *parent = nullptr);
@@ -48,19 +65,26 @@ public:
 signals:
 	void registration(int code);
 	void auth(int code);
+	void connectState(int state);
+	void searched(int result);
 
 private slots:
-	void messageReceived(const QString &message);
+	void connected();
+	void processMessage(const QString &message);
 
 public:
 	bool start(QObject *rootItem);
 	void stop();
+
 	Q_INVOKABLE void regContact(const QVariantMap &data);
-	Q_INVOKABLE void authContact(const QVariantMap &data);
+	Q_INVOKABLE void authContact(const QVariantMap &data, bool autologin);
 	Q_INVOKABLE void sendMessage(const QVariantMap &data);
+	Q_INVOKABLE void searchContact(const QString &text);
+	SearchModel *searchModel() { return &searchModel_; }
 
 private:
-	QString convertImage(const QString &fileName) const;
+	QString convertImageToBase64(const QString &fileName) const;
+	QString convertImageFromBase84(const QString &base64) const;
 };
 
 using DispatcherPtr = QSharedPointer<Dispatcher>;

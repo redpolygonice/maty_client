@@ -40,7 +40,7 @@ void Socket::sendMessage(const QString &message)
 void Socket::connected()
 {
 	connect(&socket_, &QWebSocket::textMessageReceived, this, &Socket::textMessageReceived);
-	socket_.sendTextMessage("Hello!");
+	emit opened();
 }
 
 void Socket::closed()
@@ -55,10 +55,10 @@ void Socket::textMessageReceived(const QString &message)
 
 void Socket::errorOccurred(QAbstractSocket::SocketError error)
 {
-	LOGE("WebSocket error occurred: " << error);
+	LOGE("WebSocket error " << error << ", " << socket_.errorString().toStdString());
 }
 
 void Socket::sslErrors(const QList<QSslError> &errors)
 {
-	LOGE("WebSocket Ssl errors");
+	LOGE("WebSocket Ssl error!");
 }

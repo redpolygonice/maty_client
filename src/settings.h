@@ -25,6 +25,7 @@ signals:
 
 public:
 	QString logPath() const;
+	QString tempPath() const;
 	Q_INVOKABLE QString imagePath() const;
 	Q_INVOKABLE void saveAuthData(const QVariantMap &map);
 	Q_INVOKABLE bool save();

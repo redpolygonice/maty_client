@@ -16,20 +16,10 @@ Dialog {
 	margins: 0
 	modal: true
 
-	property string titleText: ""
 	property string messageText: ""
 	property int buttons: MessageDialog.Ok | MessageDialog.Cancel
 
 	signal okClicked()
-
-	Component.onCompleted: {
-		if (titleText === "")
-		{
-			textTitle.visible = false
-			//textRect.height = 50
-			//dialog.height = 100
-		}
-	}
 
 	background: Rectangle {
 		color: "#FFFFFF"
@@ -43,6 +33,7 @@ Dialog {
 	footer: Item {}
 
 	ColumnLayout {
+		Layout.topMargin: 20
 		Layout.leftMargin: 20
 		Layout.rightMargin: 20
 		anchors.fill: parent
@@ -50,26 +41,17 @@ Dialog {
 		Rectangle {
 			id: textRect
 			height: 100
+			width: 280
 
-			ColumnLayout {
-				Layout.leftMargin: 20
-				Layout.rightMargin: 20
-				anchors.fill: parent
-
-				Text {
-					id: textTitle
-					wrapMode: Text.WordWrap
-					font.pointSize: 13
-					Layout.alignment: Qt.AlignHCenter
-					text: titleText
-				}
-
-				Text {
-					id: textMessage
-					wrapMode: Text.WordWrap
-					font.pointSize: 13
-					text: messageText
-				}
+			TextArea {
+				id: textMessage
+				font.pointSize: 13
+				text: messageText
+				readOnly: true
+				width: parent.width
+				wrapMode: Text.Wrap
+				color: Common.textColor
+				Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 			}
 		}
 
