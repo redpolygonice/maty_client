@@ -20,12 +20,15 @@ private:
 private:
 	explicit Settings(QObject *parent = nullptr);
 
+public:
+	QVariant& operator[](const QString &key) { return params_["key"]; }
+
 signals:
 	void paramsChanged();
 
 public:
 	QString logPath() const;
-	QString tempPath() const;
+	Q_INVOKABLE QString tempPath() const;
 	Q_INVOKABLE QString imagePath() const;
 	Q_INVOKABLE void saveAuthData(const QVariantMap &map);
 	Q_INVOKABLE bool save();

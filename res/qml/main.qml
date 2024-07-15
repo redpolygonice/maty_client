@@ -15,6 +15,8 @@ ApplicationWindow {
 	property variant regForm
 	property variant loginForm
 
+	signal newText(int id, string text)
+
 	Timer {
 		id: timer
 		interval: 100; running: false; repeat: false
@@ -32,6 +34,16 @@ ApplicationWindow {
 
 		x = Screen.width / 2 - mainWindow.width / 2
 		y = Screen.height / 2 - mainWindow.height / 2
+
+		dispatcher.onConnectStatus.connect(function(status) {
+			if (status === 0)
+				connectStatus.text = "Connecting .."
+			else if (status === 1)
+				connectStatus.text = "Connected"
+			else if (status === 2)
+				connectStatus.text = "Not connected"
+		})
+
 		historyModel.update(-1)
 		contactsModel.update()
 	}
@@ -53,10 +65,6 @@ ApplicationWindow {
 
 	ActionsMenu {
 		id: actionsMenu
-	}
-
-	CardDlg {
-		id: cardDlg
 	}
 
 	ConfirmDlg {
@@ -104,6 +112,28 @@ ApplicationWindow {
 			}
 		}
 	}
+
+	footer: Rectangle {
+			id: footer
+			width: parent.width
+			height: 30
+			color: "#aaaaaa"
+
+			RowLayout {
+				anchors.fill: parent
+				spacing: 5
+				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+
+				Text {
+					id: connectStatus
+					text: ""
+					color: "#000000"
+					font.pointSize: Common.fontPointSize
+					Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+					Layout.leftMargin: 10
+				}
+			}
+		}
 
 	function register()
 	{

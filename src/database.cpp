@@ -61,6 +61,7 @@ bool Database::createTables()
 					"login VARCHAR(50) NOT NULL,"
 					"image VARCHAR(50),"
 					"phone VARCHAR(20),"
+					"about TEXT,"
 					"ts TIMESTAMP NOT NULL)"))
 	{
 		qDebug() << query.lastError().text();
@@ -144,15 +145,17 @@ bool Database::clearHistory(int cid)
 	return true;
 }
 
-bool Database::appendContact(const QVariantList &list)
+bool Database::appendContact(const QVariantMap &contact)
 {
 	QSqlQuery query(db_);
-	query.prepare("INSERT INTO " + QString(kContactsName) + " (name, imgname, phone, ts)"
-												" VALUES (:name, :imgname, :phone, :ts)");
+	query.prepare("INSERT INTO " + QString(kContactsName) + " (cid, name, login, image, phone, ts)"
+												" VALUES (:cid, :name, :login, :image, :phone, :ts)");
 
-	query.bindValue(":name", list[0]);
-	query.bindValue(":imgname", list[1]);
-	query.bindValue(":phone", list[2]);
+	query.bindValue(":cid", contact["cid"].toInt());
+	query.bindValue(":name", contact["name"].toString());
+	query.bindValue(":login", contact["login"].toString());
+	query.bindValue(":image", contact["image"].toString());
+	query.bindValue(":phone", contact["phone"].toString());
 	query.bindValue(":ts", QVariant(QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss")));
 
 	if (!query.exec())
@@ -164,16 +167,17 @@ bool Database::appendContact(const QVariantList &list)
 	return true;
 }
 
-bool Database::modifyContact(int id, const QVariantList &list)
+bool Database::modifyContact(const QVariantMap &contact)
 {
 	QSqlQuery query(db_);
-	query.prepare("UPDATE " + QString(kContactsName) + " SET name = :name, imgname = :imgname, phone = :phone"
-														" WHERE id = :id");
+	query.prepare("UPDATE " + QString(kContactsName) + " SET name = :name, login = :login image = :image, phone = :phone"
+														" WHERE cid = :cid");
 
-	query.bindValue(":id", id);
-	query.bindValue(":name", list[0]);
-	query.bindValue(":imgname", list[1]);
-	query.bindValue(":phone", list[2]);
+	query.bindValue(":cid", contact["cid"].toInt());
+	query.bindValue(":name", contact["name"].toString());
+	query.bindValue(":login", contact["login"].toString());
+	query.bindValue(":image", contact["image"].toString());
+	query.bindValue(":phone", contact["phone"].toString());
 
 	if (!query.exec())
 	{
@@ -184,11 +188,11 @@ bool Database::modifyContact(int id, const QVariantList &list)
 	return true;
 }
 
-bool Database::removeContact(int id)
+bool Database::removeContact(int cid)
 {
 	QSqlQuery query(db_);
-	query.prepare("DELETE FROM " + QString(kContactsName) + " WHERE id = :id");
-	query.bindValue(":id", id);
+	query.prepare("DELETE FROM " + QString(kContactsName) + " WHERE cid = :cid");
+	query.bindValue(":cid", cid);
 
 	if (!query.exec())
 	{
@@ -199,23 +203,28 @@ bool Database::removeContact(int id)
 	return true;
 }
 
-QVariantList Database::contactCard(int id)
+QVariantMap Database::contactData(int cid)
 {
-	QVariantList result;
+	QVariantMap contact;
 
 	QSqlQuery query(db_);
-	query.prepare("SELECT name, imgname, phone FROM " +
-				  QString(kContactsName) + " WHERE id = " + QString::number(id));
+	query.prepare("SELECT * FROM " +
+				  QString(kContactsName) + " WHERE cid = " + QString::number(cid));
 
 	if (!query.exec())
 	{
 		qDebug() << query.lastError().text();
-		return result;
+		return contact;
 	}
 
-	query.first();
-	result.push_back(query.value(0));
-	result.push_back(query.value(1));
-	result.push_back(query.value(2));
-	return result;
+	if (query.first())
+	{
+		contact["cid"] = query.value("cid").toInt();
+		contact["name"] = query.value("name").toString();
+		contact["login"] = query.value("login").toString();
+		contact["image"] = query.value("image").toString();
+		contact["phone"] = query.value("phone").toString();
+	}
+
+	return contact;
 }

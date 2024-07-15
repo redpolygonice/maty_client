@@ -1,8 +1,6 @@
 #ifndef CONTACTSMODEL_H
 #define CONTACTSMODEL_H
 
-#include "dbnames.h"
-
 #include <QObject>
 #include <QSqlQueryModel>
 
@@ -15,6 +13,7 @@ public:
 	{
 		IdRole = Qt::UserRole + 1,
 		NameRole,
+		LoginRole,
 		ImageRole,
 		PhoneRole,
 		DateRole
@@ -34,7 +33,7 @@ public:
 
 public:
 	Q_INVOKABLE void update();
-	Q_INVOKABLE QVariantList card(int row);
+	Q_INVOKABLE QVariantMap card(int row);
 
 public:
 	QHash<int, QByteArray> roleNames() const override { return roleNames_; }

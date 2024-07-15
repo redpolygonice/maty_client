@@ -8,7 +8,7 @@ Rectangle {
 	id: mainRect
 	color: Common.backColor1
 
-	enum ConfirmDlgSender {
+	enum Reason {
 		None,
 		RemoveContact,
 		ClearHistory
@@ -18,14 +18,19 @@ Rectangle {
 	property alias currentIndex: listView.currentIndex
 	property string contactImageSrc: ""
 	property string contactNameText: ""
+	property variant currentModel: contactsModel
+
+	ContactInfoDlg {
+		id: contactInfoDlg
+	}
 
 	Component {
 		id: delegate
 
 		Rectangle {
 			width: mainRect.width
-			height: id > 1 ? 50 : 0
-			visible: id > 1
+			height: 50
+			visible: true
 			color: mouseArea.containsMouse ? Common.contHighlightColor : "transparent"
 
 			RowLayout {
@@ -34,17 +39,24 @@ Rectangle {
 				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
 				Image {
-					id: imageId
+					id: imageName
 					fillMode: Image.PreserveAspectFit
+					Layout.leftMargin: 10
 					sourceSize.width: 36
 					sourceSize.height: 36
+					sourceClipRect: Qt.rect(0, 0, 36, 36)
 					smooth: true
 					source: {
 						if (image === 'empty' || image.length === 0 ||
 								image === null || image === undefined)
 							return "qrc:///img/user.png"
 						else
-							return "file:///" + settings.imagePath() + "/" + image
+						{
+							if (currentModel === searchModel)
+								return "file:///" + settings.tempPath() + "/" + image
+							else
+								return "file:///" + settings.imagePath() + "/" + image
+						}
 					}
 				}
 
@@ -69,7 +81,7 @@ Rectangle {
 				cursorShape: Qt.PointingHandCursor
 
 				onClicked: (mouse) => {
-							   currentId = id
+							   currentId = cid
 							   listView.currentIndex = index
 							   mouse.accepted = false
 
@@ -85,7 +97,7 @@ Rectangle {
 	ListView {
 		id: listView
 		anchors.fill: parent
-		model: searchModel
+		model: currentModel
 		delegate: delegate
 		focus: true
 
@@ -103,17 +115,11 @@ Rectangle {
 
 		Component.onCompleted: {
 			listView.currentIndex = -1
-			dispatcher.onSearched.connect(function(result) {
+			dispatcher.onSearchResult.connect(function(result) {
 				if (result === 0)
-				{
-					listView.model = searchModel;
-					listView.update()
-				}
+					currentModel = searchModel;
 				else
-				{
-					listView.model = contactsModel;
-					listView.update()
-				}
+					currentModel = contactsModel;
 			})
 		}
 
@@ -149,9 +155,11 @@ Rectangle {
 							Layout.leftMargin: 10
 							width: 65
 							height: 65
+							radius: 10
 
 							Image {
 								id: contactImage
+								anchors.fill: parent
 								fillMode: Image.PreserveAspectFit
 								sourceSize.width: 64
 								sourceSize.height: 64
@@ -165,8 +173,11 @@ Rectangle {
 									acceptedButtons: Qt.LeftButton | Qt.RightButton
 									hoverEnabled: true
 									cursorShape: Qt.PointingHandCursor
-									onClicked: (mouse) => {
-											   }
+									onClicked: {
+										contactInfoDlg.self = true
+										contactInfoDlg.contactMap = dispatcher.selfContactInfo()
+										contactInfoDlg.open()
+									}
 								}
 							}
 						}
@@ -185,6 +196,7 @@ Rectangle {
 						PanelButton {
 							id: actionButton
 							Layout.rightMargin: 10
+							backcolor: Common.backColor2
 							text: "<b>....</b>"
 							onClicked: {
 								actionsMenu.popup()
@@ -197,7 +209,7 @@ Rectangle {
 
 						TextField {
 							id: searchText
-							text: "ale"
+							text: ""
 							placeholderText: "Search .."
 							Layout.leftMargin: 11
 							Layout.bottomMargin: 5
@@ -211,12 +223,12 @@ Rectangle {
 							}
 
 							Keys.onPressed: (event)=> {
-								if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return)
-								{
-									if (searchText.text !== "")
-										dispatcher.searchContact(searchText.text)
-								}
-							}
+												if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return)
+												{
+													if (searchText.text !== "")
+													dispatcher.searchContact(searchText.text)
+												}
+											}
 						}
 
 						PanelButton {
@@ -226,6 +238,8 @@ Rectangle {
 							text: "<b>X</b>"
 							onClicked: {
 								searchText.text = ""
+								contactsModel.update()
+								currentModel = contactsModel
 							}
 						}
 					}
@@ -242,24 +256,59 @@ Rectangle {
 		}
 	}
 
+	Component {
+		id: menuDelegate
+
+		MenuItem {
+			id: menuItem
+			implicitWidth: 200
+			implicitHeight: 40
+
+			contentItem: Text {
+				leftPadding: 10
+				rightPadding: 10
+				text: menuItem.text
+				font.pointSize: 12
+				opacity: enabled ? 1.0 : 0.3
+				color: Common.textColor
+				horizontalAlignment: Text.AlignLeft
+				verticalAlignment: Text.AlignVCenter
+				elide: Text.ElideRight
+			}
+
+			background: Rectangle {
+				implicitWidth: 200
+				implicitHeight: 40
+				opacity: enabled ? 1 : 0.3
+				color: menuItem.highlighted ? "#E5E5E5" : "transparent"
+			}
+		}
+	}
+
 	Menu {
 		id: contextMenu
 		topPadding: 3
 		bottomPadding: 3
 
 		Action {
-			text: "Card"
+			text: "Contact info"
 			onTriggered: {
-				cardDlg.contactId = currentId
-				cardDlg.reason = CardDlg.Reason.Edit
-				cardDlg.open()
+				contactInfoDlg.contactMap = currentModel.card(currentIndex)
+				contactInfoDlg.open()
 			}
 		}
 
 		Action {
-			text: "Remove"
+			text: "Add contact"
 			onTriggered: {
-				removeDlg.sender = ContactsView.ConfirmDlgSender.RemoveContact
+				dispatcher.addContact(currentModel.card(currentIndex))
+			}
+		}
+
+		Action {
+			text: "Remove contact"
+			onTriggered: {
+				removeDlg.sender = ContactsView.RemoveContact
 				removeDlg.messageText = "Remove current contact ?"
 				removeDlg.open()
 			}
@@ -268,7 +317,7 @@ Rectangle {
 		Action {
 			text: "Clear history"
 			onTriggered: {
-				removeDlg.sender = ContactsView.ConfirmDlgSender.ClearHistory
+				removeDlg.sender = ContactsView.ClearHistory
 				removeDlg.messageText = "Clear contact history ?"
 				removeDlg.open()
 			}
@@ -285,7 +334,7 @@ Rectangle {
 				text: menuItem.text
 				font.pointSize: 12
 				opacity: enabled ? 1.0 : 0.3
-				color: "#4D4D4D"
+				color: Common.textColor
 				horizontalAlignment: Text.AlignLeft
 				verticalAlignment: Text.AlignVCenter
 				elide: Text.ElideRight
@@ -310,15 +359,16 @@ Rectangle {
 
 	ConfirmDlg {
 		id: removeDlg
+		buttons: ConfirmDlg.Yes | ConfirmDlg.No
 
-		property int sender: ContactsView.ConfirmDlgSender.None
+		property int sender: ContactsView.None
 
-		onOkClicked: {
-			if (sender === ContactsView.ConfirmDlgSender.RemoveContact)
+		onYesClicked: {
+			if (sender === ContactsView.RemoveContact)
 			{
 				removeContact()
 			}
-			else if (sender === ContactsView.ConfirmDlgSender.ClearHistory)
+			else if (sender === ContactsView.ClearHistory)
 			{
 				clearHistory()
 			}
@@ -327,8 +377,8 @@ Rectangle {
 
 	function removeContact()
 	{
-		database.removeContact(currentId)
-		database.clearHistory(currentId)
+		dispatcher.removeContact(currentModel.card(currentIndex))
+		dispatcher.clearHistory(currentId)
 		contactsModel.update()
 		historyModel.update(0)
 		listView.currentIndex = -1
@@ -336,8 +386,8 @@ Rectangle {
 
 	function clearHistory()
 	{
-		database.clearHistory(currentId)
-		historyModel.update(contactsView.currentId)
+		dispatcher.clearHistory(currentId)
+		historyModel.update(currentId)
 	}
 
 	function setContactInfo()
@@ -345,7 +395,12 @@ Rectangle {
 		if (settings.params["image"] === undefined || settings.params["image"] === "")
 			contactImageSrc = ""
 		else
-			contactImageSrc = "file:///" + settings.imagePath() + "/" + settings.params["image"]
+		{
+			if (currentModel === searchModel)
+				contactImageSrc = "file:///" + settings.tempPath() + "/" + settings.params["image"]
+			else
+				contactImageSrc = "file:///" + settings.imagePath() + "/" + settings.params["image"]
+		}
 
 		if (settings.params["name"] === undefined || settings.params["name"] === "")
 			contactNameText = ""

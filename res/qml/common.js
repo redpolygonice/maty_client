@@ -1,5 +1,7 @@
 var backColor1 = "#dddddd"
 var backColor2 = "#cccccc"
+var backColor3 = "#eeeeee"
+var backColor4 = "#FAFAFA"
 var contHighlightColor = "#bbbbbb"
 var msgBackColor1 = "#EBE3D5"
 var msgBackColor2 = "#bbbbbb"

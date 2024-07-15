@@ -16,10 +16,9 @@ int main(int argc, char *argv[])
 
 	QGuiApplication app(argc, argv);
 	QQmlApplicationEngine engine;
-	QQmlApplicationEngine loginEngine;
 
-	Log::create();
 	GetSettings()->load();
+	Log::create();
 
 	if (!GetDatabase()->open())
 	{

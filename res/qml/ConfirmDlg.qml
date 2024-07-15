@@ -16,10 +16,18 @@ Dialog {
 	margins: 0
 	modal: true
 
+	enum DialogButtons{
+		Ok,
+		Cancel,
+		Yes,
+		No
+	}
+
 	property string messageText: ""
-	property int buttons: MessageDialog.Ok | MessageDialog.Cancel
+	property int buttons: ConfirmDlg.Ok | ConfirmDlg.Cancel
 
 	signal okClicked()
+	signal yesClicked()
 
 	background: Rectangle {
 		color: "#FFFFFF"
@@ -52,6 +60,8 @@ Dialog {
 				wrapMode: Text.Wrap
 				color: Common.textColor
 				Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+				horizontalAlignment: Text.AlignHCenter
+				verticalAlignment: Text.AlignVCenter
 			}
 		}
 
@@ -73,11 +83,26 @@ Dialog {
 					backcolorhover: "#dddddd"
 					text: "OK"
 					visible: {
-						return buttons & MessageDialog.Ok
+						return buttons & ConfirmDlg.Ok
 					}
 
 					onClicked: {
 						dialog.okClicked();
+						accept()
+					}
+				}
+
+				LabelButton {
+					id: buttonYes
+					backcolor: "#eeeeee"
+					backcolorhover: "#dddddd"
+					text: "Yes"
+					visible: {
+						return buttons & ConfirmDlg.Yes
+					}
+
+					onClicked: {
+						dialog.yesClicked();
 						accept()
 					}
 				}
@@ -89,7 +114,22 @@ Dialog {
 					text: "Cancel"
 
 					visible: {
-						return buttons & MessageDialog.Cancel
+						return buttons & ConfirmDlg.Cancel
+					}
+
+					onClicked: {
+						reject()
+					}
+				}
+
+				LabelButton {
+					id: buttonNo
+					backcolor: "#eeeeee"
+					backcolorhover: "#dddddd"
+					text: "No"
+
+					visible: {
+						return buttons & ConfirmDlg.No
 					}
 
 					onClicked: {

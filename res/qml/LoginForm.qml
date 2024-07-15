@@ -190,6 +190,7 @@ Window {
 			{
 				save();
 				mainWindow.visible = true
+				contactsModel.update()
 				loginWindow.destroy()
 			}
 			else
@@ -202,6 +203,6 @@ Window {
 
 	ConfirmDlg {
 		id: messageBox
-		buttons: MessageDialog.Ok
+		buttons: ConfirmDlg.Ok
 	}
 }

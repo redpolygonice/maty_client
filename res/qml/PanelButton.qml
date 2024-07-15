@@ -8,8 +8,10 @@ ToolButton {
 	Layout.preferredHeight: 30
 	Layout.preferredWidth: 30
 
+	property color backcolor: Common.backColor1
+
 	background: Rectangle {
-		color: Common.backColor1
+		color: backcolor
 	}
 
 	contentItem: Text {

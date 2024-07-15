@@ -32,9 +32,10 @@ public:
 	SearchModel& operator= (SearchModel&&) = delete;
 
 public:
-	Q_INVOKABLE void update(const QJsonObject &root);
+	Q_INVOKABLE QVariantMap card(int row);
 
 public:
+	void update(const QJsonObject &root);
 	QHash<int, QByteArray> roleNames() const override { return roleNames_; }
 	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 };

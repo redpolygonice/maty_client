@@ -11,6 +11,10 @@ Rectangle {
 	property int currentId: -1
 	property int maxItemWidth: mainRect.width * 0.7
 
+	ContactInfoDlg {
+		id: contactInfoDlg
+	}
+
 	Component {
 		id: delegate
 
@@ -158,23 +162,38 @@ Rectangle {
 					fillMode: Image.PreserveAspectFit
 					sourceSize.width: 36
 					sourceSize.height: 36
+					sourceClipRect: Qt.rect(0, 0, 36, 36)
 					smooth: true
 					source: {
-						return ""
-						// if (listView.model === null)
-						// 	return ""
+						var image = contactsView.currentModel.card(contactsView.currentIndex)["image"]
+						if (image === 'empty' || image.length === 0 ||
+								image === null || image === undefined)
+							return ""
+						else
+						{
+							if (contactsView.currentModel === searchModel)
+								return "file:///" + settings.tempPath() + "/" + image
+							else
+								return "file:///" + settings.imagePath() + "/" + image
+						}
+					}
 
-						// if (image === 'empty' || image.length === 0 ||
-						// 		image === null || image === undefined)
-						// 	return ""
-						// else
-						// 	return "file:///" + settings.imagePath() + "/" + image
+					MouseArea {
+						id: topImageArea
+						anchors.fill: parent
+						acceptedButtons: Qt.LeftButton | Qt.RightButton
+						hoverEnabled: true
+						cursorShape: Qt.PointingHandCursor
+						onClicked: (mouse) => {
+							contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
+							contactInfoDlg.open()
+						}
 					}
 				}
 
 				Text {
 					id: text
-					text: "" //contactsModel === null ? "" : contactsModel.card(contactsView.currentIndex)[0]
+					text: contactsView.currentModel.card(contactsView.currentIndex)["name"]
 					font.pointSize: 14
 					font.bold: true
 					color: "#4D4D4D"
@@ -182,6 +201,18 @@ Rectangle {
 					verticalAlignment: Text.AlignVCenter
 					horizontalAlignment: Text.AlignLeft
 					Layout.fillWidth: true
+
+					MouseArea {
+						id: topNameArea
+						anchors.fill: parent
+						acceptedButtons: Qt.LeftButton | Qt.RightButton
+						hoverEnabled: true
+						cursorShape: Qt.PointingHandCursor
+						onClicked: (mouse) => {
+							contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
+							contactInfoDlg.open()
+						}
+					}
 				}
 			}
 		}
@@ -282,9 +313,10 @@ Rectangle {
 
 	ConfirmDlg {
 		id: removeDlg
+		buttons: ConfirmDlg.Yes | ConfirmDlg.No
 		messageText: "Remove current history record ?"
 
-		onOkClicked: {
+		onYesClicked: {
 			database.removeHistory(currentId)
 			historyModel.update(contactsView.currentId)
 		}

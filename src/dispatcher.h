@@ -25,7 +25,10 @@ public:
 		Registration,
 		Auth,
 		Message,
-		Search
+		Search,
+		LinkContact,
+		UnlinkContact,
+		ClearHistory
 	};
 
 	enum class ErrorCode
@@ -65,8 +68,8 @@ public:
 signals:
 	void registration(int code);
 	void auth(int code);
-	void connectState(int state);
-	void searched(int result);
+	void connectStatus(int status);
+	void searchResult(int result);
 
 private slots:
 	void connected();
@@ -76,15 +79,23 @@ public:
 	bool start(QObject *rootItem);
 	void stop();
 
+	SearchModel *searchModel() { return &searchModel_; }
+	Q_INVOKABLE void addContact(const QVariantMap &data);
+	Q_INVOKABLE void removeContact(const QVariantMap &data);
+	Q_INVOKABLE void clearHistory(int cid);
 	Q_INVOKABLE void regContact(const QVariantMap &data);
 	Q_INVOKABLE void authContact(const QVariantMap &data, bool autologin);
-	Q_INVOKABLE void sendMessage(const QVariantMap &data);
 	Q_INVOKABLE void searchContact(const QString &text);
-	SearchModel *searchModel() { return &searchModel_; }
+	Q_INVOKABLE void sendMessage(int rid, const QString &message);
+	Q_INVOKABLE QVariantMap selfContactInfo() const;
 
 private:
-	QString convertImageToBase64(const QString &fileName) const;
-	QString convertImageFromBase84(const QString &base64) const;
+	void actionRegistration(QJsonObject &root);
+	void actionAuth(const QJsonObject &root);
+	void actionSearch(QJsonObject &root);
+	void actionMessage(const QJsonObject &root);
+	QString convertImageToBase64(const QString &fileName, QString &newName) const;
+	QString convertImageFromBase84(const QString &base64, const QString &dir) const;
 };
 
 using DispatcherPtr = QSharedPointer<Dispatcher>;

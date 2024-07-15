@@ -4,9 +4,10 @@
 ContactsModel::ContactsModel(QObject *parent)
 	: QSqlQueryModel(parent)
 {
-	roleNames_[IdRole] = "id";
+	roleNames_[IdRole] = "cid";
 	roleNames_[NameRole] = "name";
-	roleNames_[ImageRole] = "imgname";
+	roleNames_[LoginRole] = "login";
+	roleNames_[ImageRole] = "image";
 	roleNames_[PhoneRole] = "phone";
 }
 
@@ -24,17 +25,28 @@ QVariant ContactsModel::data(const QModelIndex &index, int role) const
 
 void ContactsModel::update()
 {
-	setQuery("SELECT id, name, imgname, phone FROM " +
+	setQuery("SELECT cid, name, login, image, phone FROM " +
 			 QString(kContactsName));
 }
 
-QVariantList ContactsModel::card(int row)
+QVariantMap ContactsModel::card(int row)
 {
-	if (row < 0)
-		return QVariantList({ "", "", "" });
+	QVariantMap contact{
+		{"cid", 0},
+		{"name", ""},
+		{"login", ""},
+		{"image", ""},
+		{"phone", ""}
+	};
 
-	QVariantList list{ data(index(row, 1), NameRole),
-					 data(index(row, 2), ImageRole),
-					 data(index(row, 3), PhoneRole) };
-	return list;
+	if (row < 0)
+		return contact;
+
+	contact["cid"] = data(index(row, 0), IdRole);
+	contact["name"] = data(index(row, 1), NameRole);
+	contact["login"] = data(index(row, 2), LoginRole);
+	contact["image"] = data(index(row, 3), ImageRole);
+	contact["phone"] = data(index(row, 4), PhoneRole);
+
+	return contact;
 }
