@@ -2,11 +2,11 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import "common.js" as Common
+import "theme.js" as Theme
 
 Rectangle {
 	id: mainRect
-	color: Common.backColor1
+	color: Theme.backColor1
 
 	enum Reason {
 		None,
@@ -31,7 +31,7 @@ Rectangle {
 			width: mainRect.width
 			height: 50
 			visible: true
-			color: mouseArea.containsMouse ? Common.contHighlightColor : "transparent"
+			color: mouseArea.containsMouse ? Theme.contHighlightColor : "transparent"
 
 			RowLayout {
 				anchors.fill: parent
@@ -64,7 +64,7 @@ Rectangle {
 					id: textName
 					text: name
 					font.pointSize: 13
-					color: Common.textColor
+					color: Theme.textColor
 					elide: Text.ElideRight
 					verticalAlignment: Text.AlignVCenter
 					horizontalAlignment: Text.AlignLeft
@@ -81,7 +81,7 @@ Rectangle {
 				cursorShape: Qt.PointingHandCursor
 
 				onClicked: (mouse) => {
-							   currentId = cid
+							   currentId = id
 							   listView.currentIndex = index
 							   mouse.accepted = false
 
@@ -102,7 +102,7 @@ Rectangle {
 		focus: true
 
 		highlight: Rectangle {
-			color: Common.contHighlightColor
+			color: Theme.contHighlightColor
 		}
 
 		highlightFollowsCurrentItem: true
@@ -129,13 +129,13 @@ Rectangle {
 			height: 125
 
 			background: Rectangle {
-				color: Common.backColor1
+				color: Theme.backColor1
 			}
 
 			Rectangle {
 				id: contactRect
 				anchors.fill: parent
-				color: Common.backColor2
+				color: Theme.backColor2
 				anchors.leftMargin: 3
 				anchors.topMargin: 7
 
@@ -149,7 +149,7 @@ Rectangle {
 
 						Rectangle {
 							id: imageRect
-							color: Common.backColor1
+							color: Theme.backColor1
 							border.width: 1
 							border.color: "black"
 							Layout.leftMargin: 10
@@ -190,13 +190,13 @@ Rectangle {
 							width: 110
 							wrapMode: Text.Wrap
 							font.pointSize: 11
-							color: Common.textColor
+							color: Theme.textColor
 						}
 
 						PanelButton {
 							id: actionButton
 							Layout.rightMargin: 10
-							backcolor: Common.backColor2
+							backcolor: Theme.backColor2
 							text: "<b>....</b>"
 							onClicked: {
 								actionsMenu.popup()
@@ -215,11 +215,11 @@ Rectangle {
 							Layout.bottomMargin: 5
 							Layout.fillWidth: true
 							Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-							font.pointSize: Common.fontPointSize
+							font.pointSize: Theme.fontPointSize
 							implicitHeight: 30
-							color: Common.textColor
+							color: Theme.textColor
 							background: Rectangle {
-								color: Common.backColor1
+								color: Theme.backColor1
 							}
 
 							Keys.onPressed: (event)=> {
@@ -270,7 +270,7 @@ Rectangle {
 				text: menuItem.text
 				font.pointSize: 12
 				opacity: enabled ? 1.0 : 0.3
-				color: Common.textColor
+				color: Theme.textColor
 				horizontalAlignment: Text.AlignLeft
 				verticalAlignment: Text.AlignVCenter
 				elide: Text.ElideRight
@@ -301,7 +301,7 @@ Rectangle {
 		Action {
 			text: "Add contact"
 			onTriggered: {
-				dispatcher.addContact(currentModel.card(currentIndex))
+				dispatcher.addSearchContact(currentModel.card(currentIndex))
 			}
 		}
 
@@ -334,7 +334,7 @@ Rectangle {
 				text: menuItem.text
 				font.pointSize: 12
 				opacity: enabled ? 1.0 : 0.3
-				color: Common.textColor
+				color: Theme.textColor
 				horizontalAlignment: Text.AlignLeft
 				verticalAlignment: Text.AlignVCenter
 				elide: Text.ElideRight

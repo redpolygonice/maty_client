@@ -3,7 +3,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Window
-import "common.js" as Common
+import "theme.js" as Theme
 
 Dialog {
 	id: dialog
@@ -16,7 +16,7 @@ Dialog {
 	margins: 0
 	modal: true
 
-	enum DialogButtons{
+	enum DialogButtons {
 		Ok,
 		Cancel,
 		Yes,
@@ -50,15 +50,16 @@ Dialog {
 			id: textRect
 			height: 100
 			width: 280
+			Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
 			TextArea {
 				id: textMessage
+				anchors.fill: parent
 				font.pointSize: 13
 				text: messageText
 				readOnly: true
-				width: parent.width
 				wrapMode: Text.Wrap
-				color: Common.textColor
+				color: Theme.textColor
 				Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 				horizontalAlignment: Text.AlignHCenter
 				verticalAlignment: Text.AlignVCenter

@@ -3,7 +3,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Window
-import "common.js" as Common
+import "theme.js" as Theme
 
 Window {
 	id: imageDlg

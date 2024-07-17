@@ -122,12 +122,13 @@ bool Settings::load()
 	QJsonObject authObject = rootObject["Auth"].toObject();
 	if (!authObject.isEmpty())
 	{
-		params_["cid"] = authObject["cid"].toInt();
+		params_["id"] = authObject["id"].toInt();
 		params_["autologin"] = authObject["autologin"].toBool();
 		params_["login"] = authObject["login"].toString();
 		params_["password"] = authObject["password"].toString();
 		params_["name"] = authObject["name"].toString();
 		params_["image"] = authObject["image"].toString();
+		params_["phone"] = authObject["phone"].toString();
 	}
 
 	QJsonObject netObject = rootObject["Net"].toObject();
@@ -153,12 +154,13 @@ bool Settings::save()
 
 	QJsonObject rootObject;
 	QJsonObject authObject;
-	authObject["cid"] = params_["cid"].toInt();
+	authObject["id"] = params_["id"].toInt();
 	authObject["autologin"] = params_["autologin"].toBool();
 	authObject["login"] = params_["login"].toString();
 	authObject["password"] = params_["password"].toString();
 	authObject["name"] = params_["name"].toString();
 	authObject["image"] = params_["image"].toString();
+	authObject["phone"] = params_["phone"].toString();
 	rootObject["Auth"] = authObject;
 
 	QJsonObject netObject;

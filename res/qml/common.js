@@ -1,9 +1,7 @@
-var backColor1 = "#dddddd"
-var backColor2 = "#cccccc"
-var backColor3 = "#eeeeee"
-var backColor4 = "#FAFAFA"
-var contHighlightColor = "#bbbbbb"
-var msgBackColor1 = "#EBE3D5"
-var msgBackColor2 = "#bbbbbb"
-var fontPointSize = 13
-var textColor = "#4D4D4D"
+const ConnectState = {
+	"Connecting": 0,
+	"Connected": 1,
+	"NotConneted": 2
+}
+
+var connectState = ConnectState.Connecting

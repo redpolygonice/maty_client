@@ -1,10 +1,10 @@
 import QtQuick
 import QtQuick.Controls.Basic
-import "common.js" as Common
+import "theme.js" as Theme
 
 Rectangle {
 	id: mainRect
-	color: Common.backColor1
+	color: Theme.backColor1
 	height: textView.contentHeight + 22
 	visible: contactsView.currentIndex !== -1
 
@@ -41,13 +41,13 @@ Rectangle {
 				}
 
 				if (modify)
-					database.modifyHistory(id, textView.text)
+					dispatcher.modifyHistory({ "id": id, "text": textView.text})
 				else
-					database.appendHistory([contactsView.currentId, false, textView.text])
+					dispatcher.addHistory({ "cid": settings.params["id"], "rid": contactsView.currentId,
+											  "text": textView.text})
 
 				modify = false
 				event.accepted = true
-				mainWindow.newText(contactsView.currentId, textView.text)
 				textView.clear()
 				historyModel.update(contactsView.currentId)
 			}

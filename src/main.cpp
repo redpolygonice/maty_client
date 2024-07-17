@@ -17,8 +17,8 @@ int main(int argc, char *argv[])
 	QGuiApplication app(argc, argv);
 	QQmlApplicationEngine engine;
 
-	GetSettings()->load();
 	Log::create();
+	GetSettings()->load();
 
 	if (!GetDatabase()->open())
 	{
@@ -41,7 +41,6 @@ int main(int argc, char *argv[])
 
 	engine.rootContext()->setContextProperty("historyModel", GetDatabase()->historyModel());
 	engine.rootContext()->setContextProperty("contactsModel", GetDatabase()->contactsModel());
-	engine.rootContext()->setContextProperty("database", GetDatabase().get());
 	engine.rootContext()->setContextProperty("settings", GetSettings().get());
 	engine.rootContext()->setContextProperty("dispatcher", GetDispatcher().get());
 	engine.rootContext()->setContextProperty("searchModel", GetDispatcher()->searchModel());

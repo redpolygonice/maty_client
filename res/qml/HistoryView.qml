@@ -2,14 +2,20 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import "common.js" as Common
+import "theme.js" as Theme
 
 Rectangle {
 	id: mainRect
-	color: Common.backColor2
+	color: Theme.backColor2
 
+	property int selfId: 0
 	property int currentId: -1
 	property int maxItemWidth: mainRect.width * 0.7
+
+	Component.onCompleted: {
+		if (settings.params["id"] !== undefined)
+			selfId = settings.params["id"]
+	}
 
 	ContactInfoDlg {
 		id: contactInfoDlg
@@ -57,18 +63,17 @@ Rectangle {
 				Image {
 					id: rowImage
 					fillMode: Image.PreserveAspectFit
-					sourceSize.width: 24
-					sourceSize.height: 24
+					sourceSize.width: 30
+					sourceSize.height: 30
 					smooth: true
 					source: {
 						var imageFile = ""
-						if (sender)
-							imageFile = imgname
-						else
+						if (cid === selfId)
 							imageFile = settings.params["image"]
+						else
+							imageFile = image
 
-						if (imageFile === 'empty' || imageFile.length === 0 ||
-								imageFile === null || imageFile === undefined)
+						if (imageFile === null || imageFile === undefined || imageFile.length === 0)
 							return "qrc:///img/user.png"
 						else
 							return "file:///" + settings.imagePath() + "/" + imageFile
@@ -92,10 +97,10 @@ Rectangle {
 						id: textRect
 						height: parent.height
 						color: {
-							if (sender)
-								return Common.msgBackColor1
+							if (cid === selfId)
+								return Theme.msgBackColor2
 							else
-								return Common.msgBackColor2
+								return Theme.msgBackColor1
 						}
 						radius: 20
 
@@ -109,7 +114,7 @@ Rectangle {
 							text: message
 							font.pointSize: 13
 							wrapMode: Text.Wrap
-							color: Common.textColor
+							color: Theme.textColor
 							selectionColor: "#aaaaaa"
 							selectByKeyboard: true
 							selectByMouse: true
@@ -148,7 +153,7 @@ Rectangle {
 			Layout.fillWidth: true
 			Layout.fillHeight: false
 			Layout.minimumHeight: 50
-			color: Common.backColor1
+			color: Theme.backColor1
 			visible: contactsView.currentIndex !== -1
 
 			RowLayout {
@@ -165,16 +170,15 @@ Rectangle {
 					sourceClipRect: Qt.rect(0, 0, 36, 36)
 					smooth: true
 					source: {
-						var image = contactsView.currentModel.card(contactsView.currentIndex)["image"]
-						if (image === 'empty' || image.length === 0 ||
-								image === null || image === undefined)
+						var imageFile = contactsView.currentModel.card(contactsView.currentIndex)["image"]
+						if (imageFile === null || imageFile === undefined || imageFile.length === 0)
 							return ""
 						else
 						{
 							if (contactsView.currentModel === searchModel)
-								return "file:///" + settings.tempPath() + "/" + image
+								return "file:///" + settings.tempPath() + "/" + imageFile
 							else
-								return "file:///" + settings.imagePath() + "/" + image
+								return "file:///" + settings.imagePath() + "/" + imageFile
 						}
 					}
 
@@ -184,7 +188,7 @@ Rectangle {
 						acceptedButtons: Qt.LeftButton | Qt.RightButton
 						hoverEnabled: true
 						cursorShape: Qt.PointingHandCursor
-						onClicked: (mouse) => {
+						onClicked: {
 							contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
 							contactInfoDlg.open()
 						}
@@ -208,7 +212,7 @@ Rectangle {
 						acceptedButtons: Qt.LeftButton | Qt.RightButton
 						hoverEnabled: true
 						cursorShape: Qt.PointingHandCursor
-						onClicked: (mouse) => {
+						onClicked: {
 							contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
 							contactInfoDlg.open()
 						}
@@ -288,7 +292,7 @@ Rectangle {
 				text: menuItem.text
 				font.pointSize: 12
 				opacity: enabled ? 1.0 : 0.3
-				color: Common.textColor
+				color: Theme.textColor
 				horizontalAlignment: Text.AlignLeft
 				verticalAlignment: Text.AlignVCenter
 				elide: Text.ElideRight
@@ -317,7 +321,7 @@ Rectangle {
 		messageText: "Remove current history record ?"
 
 		onYesClicked: {
-			database.removeHistory(currentId)
+			dispatcher.removeHistory(currentId)
 			historyModel.update(contactsView.currentId)
 		}
 

@@ -3,7 +3,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Window
-import "common.js" as Common
+import "theme.js" as Theme
 
 Dialog {
 	id: contactDlg
@@ -67,7 +67,7 @@ Dialog {
 
 		Rectangle {
 			id: topRect
-			color: Common.backColor4
+			color: Theme.backColor4
 			width: contactDlg.width
 			height: 80
 			Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
@@ -115,51 +115,51 @@ Dialog {
 
 			Text {
 				text: "Name:"
-				color: Common.textColor
-				font.pointSize: Common.fontPointSize
+				color: Theme.textColor
+				font.pointSize: Theme.fontPointSize
 				font.bold: true
 			}
 
 			Text {
 				id: textName
 				text: ""
-				color: Common.textColor
-				font.pointSize: Common.fontPointSize
+				color: Theme.textColor
+				font.pointSize: Theme.fontPointSize
 			}
 
 			Text {
 				text: "Login:"
-				color: Common.textColor
-				font.pointSize: Common.fontPointSize
+				color: Theme.textColor
+				font.pointSize: Theme.fontPointSize
 				font.bold: true
 			}
 
 			Text {
 				id: textLogin
 				text: ""
-				color: Common.textColor
-				font.pointSize: Common.fontPointSize
+				color: Theme.textColor
+				font.pointSize: Theme.fontPointSize
 			}
 
 			Text {
 				text: "Phone:"
-				color: Common.textColor
-				font.pointSize: Common.fontPointSize
+				color: Theme.textColor
+				font.pointSize: Theme.fontPointSize
 				font.bold: true
 			}
 
 			Text {
 				id: textPhone
 				text: ""
-				color: Common.textColor
-				font.pointSize: Common.fontPointSize
+				color: Theme.textColor
+				font.pointSize: Theme.fontPointSize
 			}
 		}
 
 		Text {
 			text: "About:"
-			color: Common.textColor
-			font.pointSize: Common.fontPointSize
+			color: Theme.textColor
+			font.pointSize: Theme.fontPointSize
 			font.bold: true
 			Layout.leftMargin: 15
 			Layout.alignment: Qt.AlignLeft | Qt.AlignTop
@@ -176,10 +176,10 @@ Dialog {
 			Layout.rightMargin: 15
 			Layout.alignment: Qt.AlignLeft | Qt.AlignTop
 			wrapMode: Text.Wrap
-			font.pointSize: Common.fontPointSize
-			color: Common.textColor
+			font.pointSize: Theme.fontPointSize
+			color: Theme.textColor
 			background: Rectangle {
-				color: Common.backColor4
+				color: Theme.backColor4
 			}
 		}
 

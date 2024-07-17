@@ -41,15 +41,17 @@ public:
 	Database& operator= (Database&&) = delete;
 
 public:
-	Q_INVOKABLE bool appendHistory(const QVariantList &list);
+	Q_INVOKABLE int appendHistory(const QVariantMap &data);
 	Q_INVOKABLE bool removeHistory(int id);
-	Q_INVOKABLE bool modifyHistory(int id, const QString &text);
+	Q_INVOKABLE bool modifyHistory(const QVariantMap &data);
 	Q_INVOKABLE bool clearHistory(int cid);
+	Q_INVOKABLE bool historyExists(int hid);
 
 	Q_INVOKABLE bool appendContact(const QVariantMap &contact);
 	Q_INVOKABLE bool modifyContact(const QVariantMap &contact);
-	Q_INVOKABLE bool removeContact(int cid);
-	Q_INVOKABLE QVariantMap contactData(int cid);
+	Q_INVOKABLE bool removeContact(int id);
+	Q_INVOKABLE QVariantMap contactData(int id);
+	bool contactExists(int id) const;
 
 public:
 	bool open();

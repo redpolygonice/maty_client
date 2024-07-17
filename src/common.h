@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef Theme_H
+#define Theme_H
 
 #include <string>
 
@@ -8,4 +8,4 @@ std::string currentTimeMs();
 int64_t timestamp();
 int64_t timestamp_micro();
 
-#endif // COMMON_H
+#endif // Theme_H

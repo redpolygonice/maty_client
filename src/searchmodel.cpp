@@ -7,7 +7,7 @@
 SearchModel::SearchModel(QObject *parent)
 	: QStandardItemModel(parent)
 {
-	roleNames_[IdRole] = "cid";
+	roleNames_[IdRole] = "id";
 	roleNames_[NameRole] = "name";
 	roleNames_[LoginRole] = "login";
 	roleNames_[ImageRole] = "image";
@@ -25,7 +25,7 @@ void SearchModel::update(const QJsonObject &root)
 	{
 		QJsonObject object = contact.toObject();
 		QStandardItem *item = new QStandardItem();
-		item->setData(object["cid"].toInt(), IdRole);
+		item->setData(object["id"].toInt(), IdRole);
 		item->setData(object["name"].toString(), NameRole);
 		item->setData(object["login"].toString(), LoginRole);
 		item->setData(object["image"].toString(), ImageRole);
@@ -49,7 +49,7 @@ QVariant SearchModel::data(const QModelIndex &index, int role) const
 QVariantMap SearchModel::card(int row)
 {
 	QVariantMap contact{
-		{"cid", 0},
+		{"id", 0},
 		{"name", ""},
 		{"login", ""},
 		{"image", ""},
@@ -63,7 +63,7 @@ QVariantMap SearchModel::card(int row)
 	if (item == nullptr)
 		return contact;
 
-	contact["cid"] = item->data(IdRole);
+	contact["id"] = item->data(IdRole);
 	contact["name"] = item->data(NameRole);
 	contact["login"] = item-> data(LoginRole);
 	contact["image"] = item->data(ImageRole);

@@ -46,10 +46,27 @@ void Dispatcher::connected()
 	connected_ = true;
 	socket_->sendMessage("Hello!");
 	connect(socket_.get(), &Socket::messageReceived, this, &Dispatcher::processMessage);
-	connect(rootItem_, SIGNAL(newText(int,QString)), this, SLOT(sendMessage(int,QString)));
 }
 
-void Dispatcher::addContact(const QVariantMap &data)
+void Dispatcher::addContact(QVariantMap& data)
+{
+	data["image"] = convertImageFromBase84(data["image"].toString(), GetSettings()->imagePath());
+
+	if (!GetDatabase()->appendContact(data))
+	{
+		LOGW("Can't append contact, try again later!");
+		return;
+	}
+
+	QJsonObject object;
+	object["action"] =static_cast<int>(Action::LinkContact);
+	object["cid"] = GetSettings()->params()["id"].toInt();
+	object["rid"] = data["id"].toInt();
+	object["approved"] = data["approved"].toBool();
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
+void Dispatcher::addSearchContact(const QVariantMap &data)
 {
 	if (!GetDatabase()->appendContact(data))
 	{
@@ -63,15 +80,15 @@ void Dispatcher::addContact(const QVariantMap &data)
 
 	QJsonObject object;
 	object["action"] =static_cast<int>(Action::LinkContact);
-	object["cid"] = GetSettings()->params()["cid"].toInt();
-	object["rid"] = data["cid"].toInt();
+	object["cid"] = GetSettings()->params()["id"].toInt();
+	object["rid"] = data["id"].toInt();
 	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
 void Dispatcher::removeContact(const QVariantMap &data)
 {
-	int cid = data["cid"].toInt();
-	if (!GetDatabase()->removeContact(cid))
+	int id = data["id"].toInt();
+	if (!GetDatabase()->removeContact(id))
 	{
 		LOGW("Can't remove contact, try again later!");
 		return;
@@ -80,22 +97,13 @@ void Dispatcher::removeContact(const QVariantMap &data)
 	QString imageName = GetSettings()->imagePath() + QDir::separator() + data["image"].toString();
 	QFile::remove(imageName);
 
-	GetDatabase()->clearHistory(cid);
+	GetDatabase()->clearHistory(id);
 
 	QJsonObject object;
 	object["action"] =static_cast<int>(Action::UnlinkContact);
-	object["cid"] = GetSettings()->params()["cid"].toInt();
-	object["rid"] = cid;
+	object["cid"] = GetSettings()->params()["id"].toInt();
+	object["rid"] = id;
 	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::clearHistory(int cid)
-{
-	if (!GetDatabase()->clearHistory(cid))
-	{
-		LOGW("Can't clear history, try again later!");
-		return;
-	}
 }
 
 void Dispatcher::regContact(const QVariantMap &data)
@@ -111,7 +119,8 @@ void Dispatcher::regContact(const QVariantMap &data)
 		GetSettings()->save();
 	}
 
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+	if (waitConnected())
+		socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
 void Dispatcher::authContact(const QVariantMap &data, bool autologin)
@@ -119,9 +128,8 @@ void Dispatcher::authContact(const QVariantMap &data, bool autologin)
 	auto authServer = [this, data, autologin]() {
 		QJsonObject object = QJsonObject::fromVariantMap(data);
 		object["action"] = static_cast<int>(Action::Auth);
-		object["cid"] = GetSettings()->params()["cid"].toInt();
-		object["querydata"] = GetSettings()->params()["cid"].toString().isEmpty() ||
-			GetSettings()->params()["name"].toString().isEmpty();
+		object["id"] = GetSettings()->params()["id"].toInt();
+		object["querydata"] = (object["id"].toInt() == 0);
 
 		if (autologin)
 		{
@@ -133,26 +141,8 @@ void Dispatcher::authContact(const QVariantMap &data, bool autologin)
 		socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 	};
 
-	emit connectStatus(static_cast<int>(ConnectState::Connecting));
-	LOG("Connecting to server ..");
-	QFuture<bool> future = QtConcurrent::run([this]() {
-		int count = 30;
-		while (!connected_ && count-- > 0)
-			QThread::msleep(100);
-		return connected_;
-	});
-
-	if (future.result())
-	{
-		emit connectStatus(static_cast<int>(ConnectState::Connected));
-		LOG("Connected to server!");
+	if (waitConnected())
 		authServer();
-	}
-	else
-	{
-		emit connectStatus(static_cast<int>(ConnectState::NotConneted));
-		LOGW("Not connected!");
-	}
 }
 
 void Dispatcher::sendMessage(int rid, const QString &message)
@@ -170,8 +160,64 @@ void Dispatcher::searchContact(const QString &text)
 	LOG("Search contact: " << text.toStdString());
 	QJsonObject object;
 	object["action"] = static_cast<int>(Action::Search);
-	object["cid"] = GetSettings()->params()["cid"].toInt();
+	object["id"] = GetSettings()->params()["id"].toInt();
 	object["text"] = text;
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
+void Dispatcher::addHistory(const QVariantMap& data)
+{
+	int hid = GetDatabase()->appendHistory(data);
+	if (hid == 0)
+	{
+		LOGW("Can't append history!");
+		return;
+	}
+
+	QJsonObject object = QJsonObject::fromVariantMap(data);
+	object["hid"] = hid;
+	object["action"] = static_cast<int>(Action::AddHistory);
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
+void Dispatcher::modifyHistory(const QVariantMap& data)
+{
+	if (!GetDatabase()->modifyHistory(data))
+	{
+		LOGW("Can't modify history!");
+		return;
+	}
+
+	QJsonObject object = QJsonObject::fromVariantMap(data);
+	object["action"] = static_cast<int>(Action::ModifyHistory);
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
+void Dispatcher::removeHistory(int id)
+{
+	if (!GetDatabase()->removeHistory(id))
+	{
+		LOGW("Can't remove history!");
+		return;
+	}
+
+	QJsonObject object;
+	object["id"] = id;
+	object["action"] = static_cast<int>(Action::RemoveHistory);
+	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
+void Dispatcher::clearHistory(int cid)
+{
+	if (!GetDatabase()->clearHistory(cid))
+	{
+		LOGW("Can't clear history, try again later!");
+		return;
+	}
+
+	QJsonObject object;
+	object["cid"] = cid;
+	object["action"] = static_cast<int>(Action::ClearHistory);
 	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
@@ -207,13 +253,24 @@ void Dispatcher::processMessage(const QString &message)
 	{
 		actionMessage(rootObject);
 	}
+
+	else if (action == Action::QueryContact)
+	{
+		actionQueryContact(rootObject);
+	}
+
+	else if (action == Action::NewHistory)
+	{
+		actionNewHistory(rootObject);
+	}
 }
 
-void Dispatcher::actionRegistration(QJsonObject &root)
+void Dispatcher::actionRegistration(const QJsonObject &root)
 {
 	ErrorCode code = static_cast<ErrorCode>(root["code"].toInt());
-	GetSettings()->params()["cid"] = root["cid"].toInt();
+	GetSettings()->params()["id"] = root["id"].toInt();
 	GetSettings()->save();
+	emit setSelfId(root["id"].toInt());
 	emit registration(static_cast<int>(code));
 }
 
@@ -224,13 +281,15 @@ void Dispatcher::actionAuth(const QJsonObject &root)
 	{
 		if (root["update"].toBool())
 		{
-			GetSettings()->params()["cid"] = root["cid"].toInt();
+			// Self contact
+			GetSettings()->params()["id"] = root["id"].toInt();
 			GetSettings()->params()["name"] = root["name"].toString();
 			GetSettings()->params()["login"] = root["login"].toString();
 			GetSettings()->params()["image"] = convertImageFromBase84(root["image"].toString(), GetSettings()->imagePath());
 			GetSettings()->params()["phone"] = root["phone"].toString();
 			GetSettings()->save();
 
+			// Link contacts
 			QJsonArray links = root["links"].toArray();
 			for (const QJsonValue &link : links)
 			{
@@ -242,6 +301,12 @@ void Dispatcher::actionAuth(const QJsonObject &root)
 					continue;
 				}
 			}
+
+			// History
+			actionNewHistory(root);
+
+			// Set self id to Qml windows
+			emit setSelfId(root["id"].toInt());
 		}
 	}
 
@@ -271,10 +336,76 @@ void Dispatcher::actionSearch(QJsonObject &root)
 
 void Dispatcher::actionMessage(const QJsonObject &root)
 {
-	int cid = root["cid"].toInt();
-	QString text = root["text"].toString();
-	QVariantList args{ cid, 0, text };
-	GetDatabase()->appendHistory(args);
+}
+
+void Dispatcher::actionQueryContact(const QJsonObject& root)
+{
+	if (GetDatabase()->contactExists(root["id"].toInt()))
+		return;
+
+	QJsonObject contactObject = root["contact"].toObject();
+	QVariantMap contact = contactObject.toVariantMap();
+	contact["approved"] = false;
+	addContact(contact);
+	GetDatabase()->contactsModel()->update();
+}
+
+void Dispatcher::actionNewHistory(const QJsonObject& root)
+{
+	QJsonArray historyArray = root["history"].toArray();
+	for (const QJsonValue &data : historyArray)
+	{
+		QJsonObject object = data.toObject();
+		QVariantMap histoty = object.toVariantMap();
+		if (GetDatabase()->appendHistory(histoty) == 0)
+		{
+			LOGW("Can't append history!");
+			return;
+		}
+
+		// Update history in HiwsoryView
+		GetDatabase()->historyModel()->update(histoty["cid"].toInt());
+
+		// Self contact
+		if (histoty["cid"].toInt() == GetSettings()->params()["id"].toInt())
+			continue;
+
+		// Check contacts with history
+		if (!GetDatabase()->contactExists(histoty["cid"].toInt()))
+		{
+			QJsonObject rootObject;
+			rootObject["id"] = histoty["cid"].toInt();
+			rootObject["action"] = static_cast<int>(Action::QueryContact);
+			socket_->sendMessage(QJsonDocument(rootObject).toJson(QJsonDocument::Compact));
+		}
+	}
+}
+
+bool Dispatcher::waitConnected()
+{
+	bool result = false;
+	emit connectStatus(static_cast<int>(ConnectState::Connecting));
+	LOG("Connecting to server ..");
+	QFuture<bool> future = QtConcurrent::run([this]() {
+		int count = 30;
+		while (!connected_ && count-- > 0)
+			QThread::msleep(100);
+		return connected_;
+	});
+
+	result = future.result();
+	if (result)
+	{
+		emit connectStatus(static_cast<int>(ConnectState::Connected));
+		LOG("Connected to server!");
+	}
+	else
+	{
+		emit connectStatus(static_cast<int>(ConnectState::NotConneted));
+		LOGW("Not connected!");
+	}
+
+	return result;
 }
 
 QString Dispatcher::convertImageToBase64(const QString &fileName, QString &newName) const
@@ -321,14 +452,14 @@ QString Dispatcher::convertImageFromBase84(const QString &base64, const QString 
 QVariantMap Dispatcher::selfContactInfo() const
 {
 	QVariantMap contact{
-		{"cid", 0},
+		{"id", 0},
 		{"name", ""},
 		{"login", ""},
 		{"image", ""},
 		{"phone", ""}
 	};
 
-	contact["cid"] = GetSettings()->params()["cid"].toInt();
+	contact["id"] = GetSettings()->params()["id"].toInt();
 	contact["name"] = GetSettings()->params()["name"].toString();
 	contact["login"] = GetSettings()->params()["login"].toString();
 	contact["image"] = GetSettings()->params()["image"].toString();

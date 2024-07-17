@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
-import Qt.labs.platform
+import "theme.js" as Theme
 import "common.js" as Common
 
 ApplicationWindow {
@@ -14,8 +14,6 @@ ApplicationWindow {
 
 	property variant regForm
 	property variant loginForm
-
-	signal newText(int id, string text)
 
 	Timer {
 		id: timer
@@ -35,12 +33,16 @@ ApplicationWindow {
 		x = Screen.width / 2 - mainWindow.width / 2
 		y = Screen.height / 2 - mainWindow.height / 2
 
+		dispatcher.onSetSelfId.connect(function(id) {
+			historyView.selfId = id
+		})
+
 		dispatcher.onConnectStatus.connect(function(status) {
-			if (status === 0)
+			if (status === Common.ConnectState.Connecting)
 				connectStatus.text = "Connecting .."
-			else if (status === 1)
+			else if (status === Common.ConnectState.Conneted)
 				connectStatus.text = "Connected"
-			else if (status === 2)
+			else if (status === Common.ConnectState.NotConneted)
 				connectStatus.text = "Not connected"
 		})
 
@@ -69,7 +71,7 @@ ApplicationWindow {
 
 	ConfirmDlg {
 		id: messageDlg
-		buttons: MessageDialog.Ok
+		buttons: ConfirmDlg.Ok
 	}
 
 	SplitView {
@@ -79,7 +81,7 @@ ApplicationWindow {
 
 		handle: Rectangle {
 			implicitWidth: 3
-			color: Common.backColor1
+			color: Theme.backColor1
 		}
 
 		ContactsView {
@@ -128,7 +130,7 @@ ApplicationWindow {
 					id: connectStatus
 					text: ""
 					color: "#000000"
-					font.pointSize: Common.fontPointSize
+					font.pointSize: Theme.fontPointSize
 					Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 					Layout.leftMargin: 10
 				}

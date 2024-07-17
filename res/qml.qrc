@@ -8,12 +8,13 @@
         <file>qml/PanelButton.qml</file>
         <file>qml/qtquickcontrols2.conf</file>
         <file>qml/ActionsMenu.qml</file>
-        <file>qml/common.js</file>
+        <file>qml/theme.js</file>
         <file>qml/LabelButton.qml</file>
         <file>qml/ConfirmDlg.qml</file>
         <file>qml/LoginForm.qml</file>
         <file>qml/RegForm.qml</file>
         <file>qml/ContactInfoDlg.qml</file>
         <file>qml/ImageDlg.qml</file>
+        <file>qml/common.js</file>
     </qresource>
 </RCC>

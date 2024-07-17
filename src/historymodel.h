@@ -12,7 +12,8 @@ public:
 	enum Roles
 	{
 		IdRole = Qt::UserRole + 1,
-		SenderRole,
+		CidRole,
+		RidRole,
 		TextRole,
 		DateRole,
 		NameRole,
@@ -32,7 +33,7 @@ public:
 	HistoryModel& operator= (HistoryModel&&) = delete;
 
 public:
-	Q_INVOKABLE void update(int cid);
+	Q_INVOKABLE void update(int rid);
 
 public:
 	QHash<int, QByteArray> roleNames() const override { return roleNames_; }

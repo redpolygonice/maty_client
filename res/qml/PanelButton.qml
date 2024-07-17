@@ -1,14 +1,14 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "common.js" as Common
+import "theme.js" as Theme
 
 ToolButton {
 	id: control
 	Layout.preferredHeight: 30
 	Layout.preferredWidth: 30
 
-	property color backcolor: Common.backColor1
+	property color backcolor: Theme.backColor1
 
 	background: Rectangle {
 		color: backcolor

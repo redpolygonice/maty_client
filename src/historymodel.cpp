@@ -8,11 +8,12 @@ HistoryModel::HistoryModel(QObject *parent)
 	: QSqlQueryModel(parent)
 {
 	roleNames_[IdRole] = "id";
-	roleNames_[SenderRole] = "sender";
+	roleNames_[CidRole] = "cid";
+	roleNames_[RidRole] = "rid";
 	roleNames_[TextRole] = "message";
 	roleNames_[DateRole] = "date";
 	roleNames_[NameRole] = "name";
-	roleNames_[ImageRole] = "imgname";
+	roleNames_[ImageRole] = "image";
 }
 
 QVariant HistoryModel::data(const QModelIndex &index, int role) const
@@ -27,14 +28,15 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
 	return QSqlQueryModel::data(index, role);
 }
 
-void HistoryModel::update(int cid)
+void HistoryModel::update(int rid)
 {
-	if (cid < 0)
+	if (rid <= 0)
 		return;
 
-	setQuery("SELECT history.id, history.sender, history.text, history.ts,"
-			 " contacts.name AS name, contacts.imgname AS imgname"
+	setQuery("SELECT history.id, history.cid, history.rid, history.text, history.ts,"
+			 " contacts.name AS name, contacts.image AS image"
 			 " FROM " + QString(kHistoryName) +
-			 " LEFT JOIN " + QString(kContactsName) + " ON contacts.id = cid"
-			 " WHERE cid = " + QString::number(cid));
+			 " LEFT JOIN " + QString(kContactsName) + " ON (contacts.id = rid OR contacts.id = cid)"
+			 " WHERE rid = " + QString::number(rid) +
+			 " OR cid = " + QString::number(rid));
 }

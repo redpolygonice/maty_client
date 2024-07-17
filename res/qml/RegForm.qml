@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Window
 import Qt.labs.platform
-import "common.js" as Common
+import "theme.js" as Theme
 
 Window {
 	id: regWindow
@@ -17,9 +17,19 @@ Window {
 
 	property string imageFile: ""
 
-	onClosing: (close) => {
-				   Qt.quit()
-			   }
+	onClosing: {
+		Qt.quit()
+	}
+
+	Component.onCompleted: {
+		dispatcher.onConnectStatus.connect(function(status) {
+			if (status === 2)
+			{
+				messageBox.messageText = "Not connected to server. Try again later!!"
+				messageBox.open()
+			}
+		})
+	}
 
 	ColumnLayout {
 		anchors.fill: parent
@@ -30,7 +40,7 @@ Window {
 			text: "Register to the Maty messaging!"
 			font.pointSize: 13
 			font.bold: true
-			color: Common.textColor
+			color: Theme.textColor
 			horizontalAlignment: Text.AlignHCenter
 			verticalAlignment: Text.AlignVCenter
 			Layout.topMargin: 10
@@ -44,71 +54,71 @@ Window {
 
 			Text {
 				text: "Name"
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 			}
 
 			TextField {
 				id: nameText
 				text: ""
 				Layout.fillWidth: true
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 				implicitHeight: 30
-				color: Common.textColor
+				color: Theme.textColor
 				background: Rectangle {
-					color: Common.backColor1
+					color: Theme.backColor1
 				}
 			}
 
 			Text {
 				text: "Login"
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 			}
 
 			TextField {
 				id: loginText
 				text: ""
 				Layout.fillWidth: true
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 				implicitHeight: 30
-				color: Common.textColor
+				color: Theme.textColor
 				background: Rectangle {
-					color: Common.backColor1
+					color: Theme.backColor1
 				}
 			}
 
 			Text {
 				text: "Password"
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 			}
 
 			TextField {
 				id: passwordText
 				text: ""
 				Layout.fillWidth: true
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 				implicitHeight: 30
-				color: Common.textColor
+				color: Theme.textColor
 				echoMode: TextInput.Password
 				background: Rectangle {
-					color: Common.backColor1
+					color: Theme.backColor1
 				}
 			}
 
 			Text {
 				text: "Phone"
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 			}
 
 			TextField {
 				id: phoneText
 				text: ""
 				Layout.fillWidth: true
-				font.pointSize: Common.fontPointSize
+				font.pointSize: Theme.fontPointSize
 				implicitHeight: 30
-				color: Common.textColor
+				color: Theme.textColor
 				echoMode: TextInput.Password
 				background: Rectangle {
-					color: Common.backColor1
+					color: Theme.backColor1
 				}
 			}
 
@@ -117,7 +127,7 @@ Window {
 				Rectangle {
 					id: imageRect
 					Layout.topMargin: 10
-					color: Common.backColor1
+					color: Theme.backColor1
 					border.width: 2
 					border.color: "black"
 					width: 64
@@ -136,7 +146,7 @@ Window {
 				Label {
 					Layout.leftMargin: 15
 					text: "Load image from file"
-					font.pointSize: Common.fontPointSize
+					font.pointSize: Theme.fontPointSize
 					color: "steelblue"
 
 					MouseArea {
