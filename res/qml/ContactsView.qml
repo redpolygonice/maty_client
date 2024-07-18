@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "theme.js" as Theme
 
 Rectangle {
@@ -31,22 +30,19 @@ Rectangle {
 			width: mainRect.width
 			height: 50
 			visible: true
-			color: mouseArea.containsMouse ? Theme.contHighlightColor : "transparent"
+			color: mouseArea.containsMouse ? Theme.contactsHighlightColor : "transparent"
 
 			RowLayout {
 				anchors.fill: parent
 				spacing: 10
 				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-				Image {
+				RoundedImage {
 					id: imageName
-					fillMode: Image.PreserveAspectFit
 					Layout.leftMargin: 10
-					sourceSize.width: 36
-					sourceSize.height: 36
-					sourceClipRect: Qt.rect(0, 0, 36, 36)
-					smooth: true
-					source: {
+					srcwidth: 42
+					srcheight: 42
+					imgsource: {
 						if (image === 'empty' || image.length === 0 ||
 								image === null || image === undefined)
 							return "qrc:///img/user.png"
@@ -83,6 +79,7 @@ Rectangle {
 				onClicked: (mouse) => {
 							   currentId = id
 							   listView.currentIndex = index
+							   historyView.positionAtEnd()
 							   mouse.accepted = false
 
 							   if (mouse.button === Qt.RightButton)
@@ -102,7 +99,7 @@ Rectangle {
 		focus: true
 
 		highlight: Rectangle {
-			color: Theme.contHighlightColor
+			color: Theme.contactsHighlightColor
 		}
 
 		highlightFollowsCurrentItem: true
@@ -147,37 +144,22 @@ Rectangle {
 						spacing: 0
 						Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-						Rectangle {
-							id: imageRect
-							color: Theme.backColor1
-							border.width: 1
-							border.color: "black"
+						RoundedImage {
+							id: contactImage
+							imgsource: contactImageSrc
 							Layout.leftMargin: 10
-							width: 65
-							height: 65
-							radius: 10
+							Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-							Image {
-								id: contactImage
+							MouseArea {
+								id: imageArea
 								anchors.fill: parent
-								fillMode: Image.PreserveAspectFit
-								sourceSize.width: 64
-								sourceSize.height: 64
-								sourceClipRect: Qt.rect(0, 0, 64, 64)
-								smooth: true
-								source: contactImageSrc
-
-								MouseArea {
-									id: imageArea
-									anchors.fill: parent
-									acceptedButtons: Qt.LeftButton | Qt.RightButton
-									hoverEnabled: true
-									cursorShape: Qt.PointingHandCursor
-									onClicked: {
-										contactInfoDlg.self = true
-										contactInfoDlg.contactMap = dispatcher.selfContactInfo()
-										contactInfoDlg.open()
-									}
+								acceptedButtons: Qt.LeftButton
+								hoverEnabled: true
+								cursorShape: Qt.PointingHandCursor
+								onClicked: {
+									contactInfoDlg.self = true
+									contactInfoDlg.contactMap = dispatcher.selfContactInfo()
+									contactInfoDlg.open()
 								}
 							}
 						}
@@ -256,35 +238,6 @@ Rectangle {
 		}
 	}
 
-	Component {
-		id: menuDelegate
-
-		MenuItem {
-			id: menuItem
-			implicitWidth: 200
-			implicitHeight: 40
-
-			contentItem: Text {
-				leftPadding: 10
-				rightPadding: 10
-				text: menuItem.text
-				font.pointSize: 12
-				opacity: enabled ? 1.0 : 0.3
-				color: Theme.textColor
-				horizontalAlignment: Text.AlignLeft
-				verticalAlignment: Text.AlignVCenter
-				elide: Text.ElideRight
-			}
-
-			background: Rectangle {
-				implicitWidth: 200
-				implicitHeight: 40
-				opacity: enabled ? 1 : 0.3
-				color: menuItem.highlighted ? "#E5E5E5" : "transparent"
-			}
-		}
-	}
-
 	Menu {
 		id: contextMenu
 		topPadding: 3
@@ -300,6 +253,7 @@ Rectangle {
 
 		Action {
 			text: "Add contact"
+			enabled: currentModel === searchModel
 			onTriggered: {
 				dispatcher.addSearchContact(currentModel.card(currentIndex))
 			}
@@ -338,13 +292,15 @@ Rectangle {
 				horizontalAlignment: Text.AlignLeft
 				verticalAlignment: Text.AlignVCenter
 				elide: Text.ElideRight
+
+
 			}
 
 			background: Rectangle {
 				implicitWidth: 200
 				implicitHeight: 40
 				opacity: enabled ? 1 : 0.3
-				color: menuItem.highlighted ? "#E5E5E5" : "transparent"
+				color: menuItem.highlighted ? Theme.menuHighlightColor : "white"
 			}
 		}
 

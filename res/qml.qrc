@@ -16,5 +16,9 @@
         <file>qml/ContactInfoDlg.qml</file>
         <file>qml/ImageDlg.qml</file>
         <file>qml/common.js</file>
+        <file>img/bullet_green.png</file>
+        <file>img/bullet_red.png</file>
+        <file>img/bullet_yellow.png</file>
+        <file>qml/RoundedImage.qml</file>
     </qresource>
 </RCC>

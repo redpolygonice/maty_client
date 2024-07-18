@@ -76,26 +76,21 @@ Dialog {
 				anchors.fill: parent
 				Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
-				Image {
+				RoundedImage {
 					id: contactImage
-					fillMode: Image.PreserveAspectFit
 					Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-					sourceSize.width: 64
-					sourceSize.height: 64
-					sourceClipRect: Qt.rect(0, 0, 64, 64)
-					width: 64
-					height: 64
-					smooth: true
-					source: ""
+					srcwidth: 70
+					srcheight: 70
+					imgsource: ""
 
 					MouseArea {
 						id: imageArea
 						anchors.fill: parent
-						acceptedButtons: Qt.LeftButton | Qt.RightButton
+						acceptedButtons: Qt.LeftButton
 						hoverEnabled: true
 						cursorShape: Qt.PointingHandCursor
 						onClicked: {
-							imageDlg.contactImageSrc = contactImage.source
+							imageDlg.contactImageSrc = contactImage.imgsource
 							imageDlg.showNormal()
 						}
 					}
@@ -222,7 +217,7 @@ Dialog {
 
 	function clear()
 	{
-		contactImage.source = ""
+		contactImage.imgsource = ""
 		textName.text = ""
 		textLogin.text = ""
 		textPhone.text = ""
@@ -238,13 +233,13 @@ Dialog {
 		var image = contactMap["image"]
 		if (image === null || image === 'empty' ||
 				image.length === 0 || image === undefined)
-			contactImage.source =  "qrc:///img/user.png"
+			contactImage.imgsource =  "qrc:///img/user.png"
 		else
 		{
 			if (contactsView.currentModel === searchModel)
-				contactImage.source = "file:///" + settings.tempPath() + "/" + image
+				contactImage.imgsource = "file:///" + settings.tempPath() + "/" + image
 			else
-				contactImage.source = "file:///" + settings.imagePath() + "/" + image
+				contactImage.imgsource = "file:///" + settings.imagePath() + "/" + image
 		}
 
 		textName.text = contactMap["name"]

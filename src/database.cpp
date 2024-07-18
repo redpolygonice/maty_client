@@ -52,7 +52,7 @@ bool Database::createTables()
 					"sync BOOLEAN,"
 					"ts TIMESTAMP NOT NULL)"))
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -66,7 +66,7 @@ bool Database::createTables()
 					"approved BOOLEAN,"
 					"ts TIMESTAMP NOT NULL)"))
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -91,11 +91,14 @@ int Database::appendHistory(const QVariantMap &data)
 	query.bindValue(":rid", data["rid"].toInt());
 	query.bindValue(":text", data["text"].toString());
 	query.bindValue(":sync", data["sync"].toInt());
-	query.bindValue(":ts", QVariant(QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss")));
+	if (data["ts"].isNull() || data["ts"].toString().isEmpty())
+		query.bindValue(":ts", QVariant(QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss")));
+	else
+		query.bindValue(":ts", data["ts"].toDateTime());
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return 0;
 	}
 
@@ -122,7 +125,7 @@ bool Database::modifyHistory(const QVariantMap &data)
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -137,7 +140,7 @@ bool Database::removeHistory(int id)
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -152,7 +155,7 @@ bool Database::clearHistory(int cid)
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -193,7 +196,7 @@ bool Database::appendContact(const QVariantMap &contact)
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -214,7 +217,7 @@ bool Database::modifyContact(const QVariantMap &contact)
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -229,7 +232,7 @@ bool Database::removeContact(int id)
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
@@ -246,7 +249,7 @@ QVariantMap Database::contactData(int id)
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return contact;
 	}
 
@@ -271,7 +274,7 @@ bool Database::contactExists(int id) const
 
 	if (!query.exec())
 	{
-		qDebug() << query.lastError().text();
+		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 

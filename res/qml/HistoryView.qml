@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "theme.js" as Theme
 
 Rectangle {
@@ -58,15 +57,13 @@ Rectangle {
 
 			Row {
 				anchors.fill: parent
-				spacing: 10
+				spacing: 7
 
-				Image {
+				RoundedImage {
 					id: rowImage
-					fillMode: Image.PreserveAspectFit
-					sourceSize.width: 30
-					sourceSize.height: 30
-					smooth: true
-					source: {
+					srcwidth: 36
+					srcheight: 36
+					imgsource: {
 						var imageFile = ""
 						if (cid === selfId)
 							imageFile = settings.params["image"]
@@ -112,7 +109,7 @@ Rectangle {
 							anchors.verticalCenter: parent.verticalCenter
 							verticalAlignment: TextEdit.AlignVCenter
 							text: message
-							font.pointSize: 13
+							font.pointSize: Theme.fontPointSize
 							wrapMode: Text.Wrap
 							color: Theme.textColor
 							selectionColor: "#aaaaaa"
@@ -158,49 +155,46 @@ Rectangle {
 
 			RowLayout {
 				anchors.fill: parent
-				anchors.leftMargin: 10
+				anchors.leftMargin: 15
 				spacing: 10
 				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-				Image {
-					id: topImage
-					fillMode: Image.PreserveAspectFit
-					sourceSize.width: 36
-					sourceSize.height: 36
-					sourceClipRect: Qt.rect(0, 0, 36, 36)
-					smooth: true
-					source: {
-						var imageFile = contactsView.currentModel.card(contactsView.currentIndex)["image"]
-						if (imageFile === null || imageFile === undefined || imageFile.length === 0)
-							return ""
-						else
-						{
-							if (contactsView.currentModel === searchModel)
-								return "file:///" + settings.tempPath() + "/" + imageFile
-							else
-								return "file:///" + settings.imagePath() + "/" + imageFile
-						}
-					}
+				// RoundedImage {
+				// 	id: topImage
+				// 	srcwidth: 36
+				// 	srcheight: 36
+				// 	imgsource: {
+				// 		var imageFile = contactsView.currentModel.card(contactsView.currentIndex)["image"]
+				// 		if (imageFile === null || imageFile === undefined || imageFile.length === 0)
+				// 			return ""
+				// 		else
+				// 		{
+				// 			if (contactsView.currentModel === searchModel)
+				// 				return "file:///" + settings.tempPath() + "/" + imageFile
+				// 			else
+				// 				return "file:///" + settings.imagePath() + "/" + imageFile
+				// 		}
+				// 	}
 
-					MouseArea {
-						id: topImageArea
-						anchors.fill: parent
-						acceptedButtons: Qt.LeftButton | Qt.RightButton
-						hoverEnabled: true
-						cursorShape: Qt.PointingHandCursor
-						onClicked: {
-							contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
-							contactInfoDlg.open()
-						}
-					}
-				}
+				// 	MouseArea {
+				// 		id: topImageArea
+				// 		anchors.fill: parent
+				// 		acceptedButtons: Qt.LeftButton | Qt.RightButton
+				// 		hoverEnabled: true
+				// 		cursorShape: Qt.PointingHandCursor
+				// 		onClicked: {
+				// 			contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
+				// 			contactInfoDlg.open()
+				// 		}
+				// 	}
+				// }
 
 				Text {
 					id: text
 					text: contactsView.currentModel.card(contactsView.currentIndex)["name"]
-					font.pointSize: 14
+					font.pointSize: Theme.fontPointSize
 					font.bold: true
-					color: "#4D4D4D"
+					color: Theme.textColor
 					elide: Text.ElideRight
 					verticalAlignment: Text.AlignVCenter
 					horizontalAlignment: Text.AlignLeft
@@ -228,7 +222,7 @@ Rectangle {
 			Layout.fillHeight: true
 			Layout.leftMargin: 10
 			Layout.topMargin: 10
-			Layout.bottomMargin: 20
+			Layout.bottomMargin: 30
 			spacing: 30
 			model: historyModel
 			delegate: delegate
@@ -302,7 +296,7 @@ Rectangle {
 				implicitWidth: 200
 				implicitHeight: 40
 				opacity: enabled ? 1 : 0.3
-				color: menuItem.highlighted ? "#E5E5E5" : "transparent"
+				color: menuItem.highlighted ? Theme.menuHighlightColor : "transparent"
 			}
 		}
 
@@ -324,6 +318,10 @@ Rectangle {
 			dispatcher.removeHistory(currentId)
 			historyModel.update(contactsView.currentId)
 		}
+	}
 
+	function positionAtEnd()
+	{
+		listView.positionViewAtIndex(listView.count - 1, ListView.Beginning)
 	}
 }

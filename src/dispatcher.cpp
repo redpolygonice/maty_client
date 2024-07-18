@@ -357,6 +357,7 @@ void Dispatcher::actionNewHistory(const QJsonObject& root)
 	{
 		QJsonObject object = data.toObject();
 		QVariantMap histoty = object.toVariantMap();
+		histoty["sync"] = true;
 		if (GetDatabase()->appendHistory(histoty) == 0)
 		{
 			LOGW("Can't append history!");
@@ -364,7 +365,7 @@ void Dispatcher::actionNewHistory(const QJsonObject& root)
 		}
 
 		// Update history in HiwsoryView
-		GetDatabase()->historyModel()->update(histoty["cid"].toInt());
+		//GetDatabase()->historyModel()->update(histoty["cid"].toInt());
 
 		// Self contact
 		if (histoty["cid"].toInt() == GetSettings()->params()["id"].toInt())
@@ -383,29 +384,31 @@ void Dispatcher::actionNewHistory(const QJsonObject& root)
 
 bool Dispatcher::waitConnected()
 {
-	bool result = false;
-	emit connectStatus(static_cast<int>(ConnectState::Connecting));
-	LOG("Connecting to server ..");
 	QFuture<bool> future = QtConcurrent::run([this]() {
+		emit connectState(static_cast<int>(ConnectState::Connecting));
+		LOG("Connecting to server ..");
+		QThread::msleep(50);
+
 		int count = 30;
 		while (!connected_ && count-- > 0)
 			QThread::msleep(100);
-		return connected_;
+
+		bool result = connected_;
+		if (result)
+		{
+			emit connectState(static_cast<int>(ConnectState::Connected));
+			LOG("Connected to server!");
+		}
+		else
+		{
+			emit connectState(static_cast<int>(ConnectState::NotConneted));
+			LOGW("Not connected!");
+		}
+
+		return result;
 	});
 
-	result = future.result();
-	if (result)
-	{
-		emit connectStatus(static_cast<int>(ConnectState::Connected));
-		LOG("Connected to server!");
-	}
-	else
-	{
-		emit connectStatus(static_cast<int>(ConnectState::NotConneted));
-		LOGW("Not connected!");
-	}
-
-	return result;
+	return future.result();
 }
 
 QString Dispatcher::convertImageToBase64(const QString &fileName, QString &newName) const

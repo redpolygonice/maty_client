@@ -59,7 +59,7 @@ public:
 	};
 
 private:
-	bool connected_;
+	std::atomic_bool connected_;
 	QObject *rootItem_;
 	SocketPtr socket_;
 	SearchModel searchModel_;
@@ -73,7 +73,7 @@ public:
 signals:
 	void registration(int code);
 	void auth(int code);
-	void connectStatus(int status);
+	void connectState(int state);
 	void searchResult(int result);
 	void setSelfId(int id);
 
@@ -86,6 +86,8 @@ public:
 	void stop();
 
 	SearchModel *searchModel() { return &searchModel_; }
+	Q_INVOKABLE bool isConnected() const { return connected_; }
+
 	Q_INVOKABLE void addContact(QVariantMap &data);
 	Q_INVOKABLE void addSearchContact(const QVariantMap &data);
 	Q_INVOKABLE void removeContact(const QVariantMap &data);

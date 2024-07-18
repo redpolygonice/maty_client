@@ -14,6 +14,7 @@ ApplicationWindow {
 
 	property variant regForm
 	property variant loginForm
+	property string connectImageSrc: ""
 
 	Timer {
 		id: timer
@@ -37,13 +38,29 @@ ApplicationWindow {
 			historyView.selfId = id
 		})
 
-		dispatcher.onConnectStatus.connect(function(status) {
-			if (status === Common.ConnectState.Connecting)
-				connectStatus.text = "Connecting .."
-			else if (status === Common.ConnectState.Conneted)
-				connectStatus.text = "Connected"
-			else if (status === Common.ConnectState.NotConneted)
-				connectStatus.text = "Not connected"
+		Common.connectState = Common.ConnectState.Connecting
+		connectImageSrc = "qrc:///img/bullet_yellow.png"
+
+		dispatcher.onConnectState.connect(function(state) {
+			Common.connectState = state
+			if (Common.connectState === Common.ConnectState.Connecting)
+			{
+				connectSate.text = "Connecting .."
+				connectImageSrc = "qrc:///img/bullet_yellow.png"
+				messageView.enabled = false
+			}
+			else if (Common.connectState === Common.ConnectState.Connected)
+			{
+				connectSate.text = "Connected"
+				connectImageSrc = "qrc:///img/bullet_green.png"
+				messageView.enabled = true
+			}
+			else if (Common.connectState === Common.ConnectState.NotConneted)
+			{
+				connectSate.text = "Not connected"
+				connectImageSrc = "qrc:///img/bullet_red.png"
+				messageView.enabled = false
+			}
 		})
 
 		historyModel.update(-1)
@@ -121,18 +138,27 @@ ApplicationWindow {
 			height: 30
 			color: "#aaaaaa"
 
-			RowLayout {
+			Row {
 				anchors.fill: parent
 				spacing: 5
-				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+
+				Image {
+					id: connectImage
+					fillMode: Image.PreserveAspectFit
+					sourceSize.width: 30
+					sourceSize.height: 30
+					smooth: true
+					source: connectImageSrc
+				}
 
 				Text {
-					id: connectStatus
-					text: ""
+					id: connectSate
+					height: footer.height
+					text: "Connecting .."
 					color: "#000000"
 					font.pointSize: Theme.fontPointSize
-					Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-					Layout.leftMargin: 10
+					horizontalAlignment: Text.Left
+					verticalAlignment: Text.AlignVCenter
 				}
 			}
 		}
