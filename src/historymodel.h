@@ -33,7 +33,7 @@ public:
 	HistoryModel& operator= (HistoryModel&&) = delete;
 
 public:
-	Q_INVOKABLE void update(int rid);
+	Q_INVOKABLE void update(int cid);
 
 public:
 	QHash<int, QByteArray> roleNames() const override { return roleNames_; }

@@ -120,7 +120,7 @@ bool Database::modifyHistory(const QVariantMap &data)
 {
 	QSqlQuery query(db_);
 	query.prepare("UPDATE " + QString(kHistoryName) + " SET text = :text WHERE id = :id");
-	query.bindValue(":id", data["id"].toInt());
+	query.bindValue(":id", data["hid"].toInt());
 	query.bindValue(":text", data["text"].toString());
 
 	if (!query.exec())
@@ -150,7 +150,7 @@ bool Database::removeHistory(int id)
 bool Database::clearHistory(int cid)
 {
 	QSqlQuery query(db_);
-	query.prepare("DELETE FROM " + QString(kHistoryName) + " WHERE cid = :cid");
+	query.prepare("DELETE FROM " + QString(kHistoryName) + " WHERE cid = :cid OR rid = :cid");
 	query.bindValue(":cid", cid);
 
 	if (!query.exec())

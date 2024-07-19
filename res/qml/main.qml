@@ -136,7 +136,7 @@ ApplicationWindow {
 			id: footer
 			width: parent.width
 			height: 30
-			color: "#aaaaaa"
+			color: Theme.selectionColor
 
 			Row {
 				anchors.fill: parent
@@ -183,7 +183,8 @@ ApplicationWindow {
 			messageDlg.open()
 		}
 
-		dispatcher.authContact({ "login": settings.params["login"], "password": settings.params["password"] }, true);
+		dispatcher.authContact({ "login": settings.params["login"], "password": settings.params["password"],
+								   "autologin": true })
 
 		dispatcher.onAuth.connect(function(code) {
 			if (code === 0)

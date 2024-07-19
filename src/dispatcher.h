@@ -3,14 +3,57 @@
 
 #include "socket.h"
 #include "searchmodel.h"
+#include "contacts.h"
+#include "history.h"
 
 #include <QObject>
 #include <QThread>
 #include <QScopedPointer>
 #include <QSharedPointer>
 #include <QVariantMap>
+#include <QFutureWatcher>
 
 using SocketPtr = QSharedPointer<Socket>;
+using IntList = QList<int>;
+
+enum class Action
+{
+	None,
+	Registration,
+	Auth,
+	Message,
+	Search,
+	QueryContact,
+	LinkContact,
+	UnlinkContact,
+	AddHistory,
+	ModifyHistory,
+	RemoveHistory,
+	ClearHistory,
+	NewHistory
+};
+
+enum class ErrorCode
+{
+	Ok,
+	Error,
+	LoginExists,
+	NoLogin,
+	Password
+};
+
+enum class ConnectState
+{
+	Connecting,
+	Connected,
+	NotConneted
+};
+
+enum class SearchResult
+{
+	Found,
+	NotFound
+};
 
 class Dispatcher : public QObject
 {
@@ -18,51 +61,14 @@ class Dispatcher : public QObject
 
 	Q_OBJECT
 
-public:
-	enum class Action
-	{
-		None,
-		Registration,
-		Auth,
-		Message,
-		Search,
-		QueryContact,
-		LinkContact,
-		UnlinkContact,
-		AddHistory,
-		ModifyHistory,
-		RemoveHistory,
-		ClearHistory,
-		NewHistory
-	};
-
-	enum class ErrorCode
-	{
-		Ok,
-		Error,
-		LoginExists,
-		NoLogin,
-		Password
-	};
-
-	enum class ConnectState
-	{
-		Connecting,
-		Connected,
-		NotConneted
-	};
-
-	enum class SearchResult
-	{
-		Found,
-		NotFound
-	};
-
 private:
 	std::atomic_bool connected_;
 	QObject *rootItem_;
 	SocketPtr socket_;
 	SearchModel searchModel_;
+	ContactsServicePtr contactsSvc_;
+	HistoryServicePtr historySvc_;
+	QFutureWatcher<int> connectWatcher_;
 
 private:
 	explicit Dispatcher(QObject *parent = nullptr);
@@ -71,7 +77,7 @@ public:
 	virtual ~Dispatcher();
 
 signals:
-	void registration(int code);
+	void reg(int code);
 	void auth(int code);
 	void connectState(int state);
 	void searchResult(int result);
@@ -85,33 +91,28 @@ public:
 	bool start(QObject *rootItem);
 	void stop();
 
+	void sendMessage(const QString &message);
+	SocketPtr socket() { return socket_; }
 	SearchModel *searchModel() { return &searchModel_; }
-	Q_INVOKABLE bool isConnected() const { return connected_; }
+	void setSearchResult(int result) { emit searchResult(result); }
 
-	Q_INVOKABLE void addContact(QVariantMap &data);
-	Q_INVOKABLE void addSearchContact(const QVariantMap &data);
-	Q_INVOKABLE void removeContact(const QVariantMap &data);
 	Q_INVOKABLE void regContact(const QVariantMap &data);
-	Q_INVOKABLE void authContact(const QVariantMap &data, bool autologin);
-	Q_INVOKABLE void searchContact(const QString &text);
-	Q_INVOKABLE void sendMessage(int rid, const QString &message);
-	Q_INVOKABLE QVariantMap selfContactInfo() const;
-
-	Q_INVOKABLE void addHistory(const QVariantMap &data);
-	Q_INVOKABLE void removeHistory(int id);
-	Q_INVOKABLE void modifyHistory(const QVariantMap &data);
-	Q_INVOKABLE void clearHistory(int cid);
+	Q_INVOKABLE void authContact(const QVariantMap &data);
+	Q_INVOKABLE bool isConnected() const { return connected_; }
+	Q_INVOKABLE void addContact(QVariantMap &data) { contactsSvc_->add(data); }
+	Q_INVOKABLE void addSearchContact(const QVariantMap &data) { contactsSvc_->addSearch(data); }
+	Q_INVOKABLE void removeContact(const QVariantMap &data) { contactsSvc_->remove(data); }
+	Q_INVOKABLE void searchContact(const QString &text) { contactsSvc_->search(text); }
+	Q_INVOKABLE QVariantMap selfContactInfo() const { return contactsSvc_->selfInfo(); }
+	Q_INVOKABLE void addHistory(const QVariantMap &data) { historySvc_->add(data); }
+	Q_INVOKABLE void modifyHistory(const QVariantMap &data) { historySvc_->modify(data); }
+	Q_INVOKABLE void removeHistory(const QVariantMap& data) { historySvc_->remove(data); }
+	Q_INVOKABLE void clearHistory(int cid) { historySvc_->clear(cid); }
 
 private:
-	void actionRegistration(const QJsonObject &root);
+	void actionReg(const QJsonObject &root);
 	void actionAuth(const QJsonObject &root);
-	void actionSearch(QJsonObject &root);
-	void actionMessage(const QJsonObject &root);
-	void actionQueryContact(const QJsonObject &root);
-	void actionNewHistory(const QJsonObject &root);
-	bool waitConnected();
-	QString convertImageToBase64(const QString &fileName, QString &newName) const;
-	QString convertImageFromBase84(const QString &base64, const QString &dir) const;
+	template <typename Function> void waitConnected(Function &&func);
 };
 
 using DispatcherPtr = QSharedPointer<Dispatcher>;

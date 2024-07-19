@@ -4,6 +4,10 @@
 #include <ctime>
 #include <chrono>
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <fstream>
+
 std::string currentTime()
 {
 	std::time_t time = std::time(NULL);
@@ -43,4 +47,23 @@ int64_t timestamp()
 int64_t timestamp_micro()
 {
 	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+bool isQtCreatorParentProc()
+{
+	std::string ppid = std::to_string(getppid());
+	std::string fileName = "/proc/" + ppid + "/comm";
+
+	std::ifstream ifs(fileName, std::ios::in);
+	if (!ifs.is_open())
+		return false;
+
+	std::string line;
+	std::getline(ifs, line);
+
+	if (line.find("qtcreator") != std::string::npos ||
+		line.find("gdb") != std::string::npos)
+		return true;
+
+	return false;
 }

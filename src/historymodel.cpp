@@ -28,15 +28,15 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
 	return QSqlQueryModel::data(index, role);
 }
 
-void HistoryModel::update(int rid)
+void HistoryModel::update(int cid)
 {
-	if (rid <= 0)
+	if (cid <= 0)
 		return;
 
 	setQuery("SELECT history.id, history.cid, history.rid, history.text, history.ts,"
 			 " contacts.name AS name, contacts.image AS image"
 			 " FROM " + QString(kHistoryName) +
 			 " LEFT JOIN " + QString(kContactsName) + " ON (contacts.id = rid OR contacts.id = cid)"
-			 " WHERE rid = " + QString::number(rid) +
-			 " OR cid = " + QString::number(rid));
+			 " WHERE rid = " + QString::number(cid) +
+			 " OR cid = " + QString::number(cid));
 }

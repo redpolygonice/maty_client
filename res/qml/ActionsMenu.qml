@@ -34,9 +34,6 @@ Menu {
 	Action {
 		text: "Settings"
 		onTriggered: {
-			contactInfoDlg.self = true
-			contactInfoDlg.contactMap = dispatcher.selfContactInfo()
-			contactInfoDlg.open()
 		}
 	}
 

@@ -3,22 +3,21 @@
 #include "log.h"
 #include "settings.h"
 #include "crypt.h"
+#include "image.h"
 
 #include <QDebug>
 #include <QVariantList>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QUuid>
-#include <QFile>
-#include <QDir>
 #include <QtConcurrent>
-#include <QFuture>
 
 Dispatcher::Dispatcher(QObject *parent)
 	: QObject{parent}
 	, connected_(false)
 	, rootItem_(nullptr)
 	, socket_(QSharedPointer<Socket>::create())
+	, contactsSvc_(ContactsService::create())
+	, historySvc_(HistoryService::create())
 {
 }
 
@@ -40,6 +39,11 @@ void Dispatcher::stop()
 	socket_->close();
 }
 
+void Dispatcher::sendMessage(const QString& message)
+{
+	socket_->sendMessage(message);
+}
+
 void Dispatcher::connected()
 {
 	LOG("WebSocket connected!");
@@ -48,177 +52,49 @@ void Dispatcher::connected()
 	connect(socket_.get(), &Socket::messageReceived, this, &Dispatcher::processMessage);
 }
 
-void Dispatcher::addContact(QVariantMap& data)
-{
-	data["image"] = convertImageFromBase84(data["image"].toString(), GetSettings()->imagePath());
-
-	if (!GetDatabase()->appendContact(data))
-	{
-		LOGW("Can't append contact, try again later!");
-		return;
-	}
-
-	QJsonObject object;
-	object["action"] =static_cast<int>(Action::LinkContact);
-	object["cid"] = GetSettings()->params()["id"].toInt();
-	object["rid"] = data["id"].toInt();
-	object["approved"] = data["approved"].toBool();
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::addSearchContact(const QVariantMap &data)
-{
-	if (!GetDatabase()->appendContact(data))
-	{
-		LOGW("Can't append contact, try again later!");
-		return;
-	}
-
-	QString oldName = GetSettings()->tempPath() + QDir::separator() + data["image"].toString();
-	QString newName = GetSettings()->imagePath() + QDir::separator() + data["image"].toString();
-	QFile::rename(oldName, newName);
-
-	QJsonObject object;
-	object["action"] =static_cast<int>(Action::LinkContact);
-	object["cid"] = GetSettings()->params()["id"].toInt();
-	object["rid"] = data["id"].toInt();
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::removeContact(const QVariantMap &data)
-{
-	int id = data["id"].toInt();
-	if (!GetDatabase()->removeContact(id))
-	{
-		LOGW("Can't remove contact, try again later!");
-		return;
-	}
-
-	QString imageName = GetSettings()->imagePath() + QDir::separator() + data["image"].toString();
-	QFile::remove(imageName);
-
-	GetDatabase()->clearHistory(id);
-
-	QJsonObject object;
-	object["action"] =static_cast<int>(Action::UnlinkContact);
-	object["cid"] = GetSettings()->params()["id"].toInt();
-	object["rid"] = id;
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
 void Dispatcher::regContact(const QVariantMap &data)
 {
-	QJsonObject object = QJsonObject::fromVariantMap(data);
-	object["action"] = static_cast<int>(Action::Registration);
+	auto regServer = [this, data]() {
+		QJsonObject object = QJsonObject::fromVariantMap(data);
+		object["action"] = static_cast<int>(Action::Registration);
 
-	if (!object["image"].toString().isEmpty())
-	{
-		QString newName;
-		object["image"] = convertImageToBase64(object["image"].toString(), newName);
-		GetSettings()->params()["image"] = newName;
-		GetSettings()->save();
-	}
+		if (!object["image"].toString().isEmpty())
+		{
+			QString newName;
+			object["image"] = Image::convertToBase64(object["image"].toString(), newName);
+			GetSettings()->params()["image"] = newName;
+			GetSettings()->save();
+		}
 
-	if (waitConnected())
-		socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+		LOG("Performing reg, login: " << object["login"].toString().toStdString());
+		if (static_cast<ConnectState>(connectWatcher_.result()) == ConnectState::Connected)
+			socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+	};
+
+	waitConnected(std::move(regServer));
 }
 
-void Dispatcher::authContact(const QVariantMap &data, bool autologin)
+void Dispatcher::authContact(const QVariantMap &data)
 {
-	auto authServer = [this, data, autologin]() {
+	auto authServer = [this, data]() {
 		QJsonObject object = QJsonObject::fromVariantMap(data);
 		object["action"] = static_cast<int>(Action::Auth);
 		object["id"] = GetSettings()->params()["id"].toInt();
 		object["querydata"] = (object["id"].toInt() == 0);
 
-		if (autologin)
+		if (object["autologin"].toBool())
 		{
 			Crypt crypt;
 			QByteArray encrypted = QByteArray::fromHex(data["password"].toString().toLocal8Bit());
 			object["password"] = crypt.decrypt(encrypted);
 		}
 
-		socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+		LOG("Performing auth, login: " << object["login"].toString().toStdString());
+		if (static_cast<ConnectState>(connectWatcher_.result()) == ConnectState::Connected)
+			socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 	};
 
-	if (waitConnected())
-		authServer();
-}
-
-void Dispatcher::sendMessage(int rid, const QString &message)
-{
-	QJsonObject object;
-	object["action"] = static_cast<int>(Action::Message);
-	object["cid"] = GetSettings()->params()["cid"].toInt();
-	object["rid"] = rid;
-	object["message"] = message;
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::searchContact(const QString &text)
-{
-	LOG("Search contact: " << text.toStdString());
-	QJsonObject object;
-	object["action"] = static_cast<int>(Action::Search);
-	object["id"] = GetSettings()->params()["id"].toInt();
-	object["text"] = text;
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::addHistory(const QVariantMap& data)
-{
-	int hid = GetDatabase()->appendHistory(data);
-	if (hid == 0)
-	{
-		LOGW("Can't append history!");
-		return;
-	}
-
-	QJsonObject object = QJsonObject::fromVariantMap(data);
-	object["hid"] = hid;
-	object["action"] = static_cast<int>(Action::AddHistory);
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::modifyHistory(const QVariantMap& data)
-{
-	if (!GetDatabase()->modifyHistory(data))
-	{
-		LOGW("Can't modify history!");
-		return;
-	}
-
-	QJsonObject object = QJsonObject::fromVariantMap(data);
-	object["action"] = static_cast<int>(Action::ModifyHistory);
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::removeHistory(int id)
-{
-	if (!GetDatabase()->removeHistory(id))
-	{
-		LOGW("Can't remove history!");
-		return;
-	}
-
-	QJsonObject object;
-	object["id"] = id;
-	object["action"] = static_cast<int>(Action::RemoveHistory);
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
-}
-
-void Dispatcher::clearHistory(int cid)
-{
-	if (!GetDatabase()->clearHistory(cid))
-	{
-		LOGW("Can't clear history, try again later!");
-		return;
-	}
-
-	QJsonObject object;
-	object["cid"] = cid;
-	object["action"] = static_cast<int>(Action::ClearHistory);
-	socket_->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+	waitConnected(std::move(authServer));
 }
 
 void Dispatcher::processMessage(const QString &message)
@@ -236,7 +112,7 @@ void Dispatcher::processMessage(const QString &message)
 
 	if (action == Action::Registration)
 	{
-		actionRegistration(rootObject);
+		actionReg(rootObject);
 	}
 
 	else if (action == Action::Auth)
@@ -246,32 +122,31 @@ void Dispatcher::processMessage(const QString &message)
 
 	else if (action == Action::Search)
 	{
-		actionSearch(rootObject);
-	}
-
-	else if (action == Action::Message)
-	{
-		actionMessage(rootObject);
+		contactsSvc_->actionSearch(rootObject);
 	}
 
 	else if (action == Action::QueryContact)
 	{
-		actionQueryContact(rootObject);
+		contactsSvc_->actionQuery(rootObject);
 	}
 
 	else if (action == Action::NewHistory)
 	{
-		actionNewHistory(rootObject);
+		historySvc_->actionNew(rootObject);
 	}
 }
 
-void Dispatcher::actionRegistration(const QJsonObject &root)
+void Dispatcher::actionReg(const QJsonObject &root)
 {
 	ErrorCode code = static_cast<ErrorCode>(root["code"].toInt());
 	GetSettings()->params()["id"] = root["id"].toInt();
 	GetSettings()->save();
+
+	if (code == ErrorCode::Ok)
+		LOG("Reg OK!");
+
 	emit setSelfId(root["id"].toInt());
-	emit registration(static_cast<int>(code));
+	emit reg(static_cast<int>(code));
 }
 
 void Dispatcher::actionAuth(const QJsonObject &root)
@@ -279,13 +154,15 @@ void Dispatcher::actionAuth(const QJsonObject &root)
 	ErrorCode code = static_cast<ErrorCode>(root["code"].toInt());
 	if (code == ErrorCode::Ok)
 	{
+		LOG("Auth OK!");
+
 		if (root["update"].toBool())
 		{
 			// Self contact
 			GetSettings()->params()["id"] = root["id"].toInt();
 			GetSettings()->params()["name"] = root["name"].toString();
 			GetSettings()->params()["login"] = root["login"].toString();
-			GetSettings()->params()["image"] = convertImageFromBase84(root["image"].toString(), GetSettings()->imagePath());
+			GetSettings()->params()["image"] = Image::convertFromBase84(root["image"].toString(), GetSettings()->imagePath());
 			GetSettings()->params()["phone"] = root["phone"].toString();
 			GetSettings()->save();
 
@@ -294,7 +171,7 @@ void Dispatcher::actionAuth(const QJsonObject &root)
 			for (const QJsonValue &link : links)
 			{
 				QJsonObject object = link.toObject();
-				object["image"] = convertImageFromBase84(object["image"].toString(), GetSettings()->imagePath());
+				object["image"] = Image::convertFromBase84(object["image"].toString(), GetSettings()->imagePath());
 				if (!GetDatabase()->appendContact(object.toVariantMap()))
 				{
 					LOGW("Can't link contact!");
@@ -303,7 +180,7 @@ void Dispatcher::actionAuth(const QJsonObject &root)
 			}
 
 			// History
-			actionNewHistory(root);
+			historySvc_->actionNew(root);
 
 			// Set self id to Qml windows
 			emit setSelfId(root["id"].toInt());
@@ -313,160 +190,34 @@ void Dispatcher::actionAuth(const QJsonObject &root)
 	emit auth(static_cast<int>(code));
 }
 
-void Dispatcher::actionSearch(QJsonObject &root)
+template <typename Function> void Dispatcher::waitConnected(Function &&func)
 {
-	SearchResult result = static_cast<SearchResult>(root["searchResult"].toInt());
-	if (result == SearchResult::Found)
-	{
-		QJsonArray contactsArray = root["contacts"].toArray();
-		QJsonArray contacts;
-		for (const QJsonValue &contact : contactsArray)
-		{
-			QJsonObject object = contact.toObject();
-			object["image"] = convertImageFromBase84(object["image"].toString(), GetSettings()->tempPath());
-			contacts.push_back(object);
-		}
+	connect(&connectWatcher_, &QFutureWatcher<int>::finished, this, func);
 
-		root["contacts"] = contacts;
-		searchModel_.update(root);
-	}
-
-	emit searchResult(static_cast<int>(result));
-}
-
-void Dispatcher::actionMessage(const QJsonObject &root)
-{
-}
-
-void Dispatcher::actionQueryContact(const QJsonObject& root)
-{
-	if (GetDatabase()->contactExists(root["id"].toInt()))
-		return;
-
-	QJsonObject contactObject = root["contact"].toObject();
-	QVariantMap contact = contactObject.toVariantMap();
-	contact["approved"] = false;
-	addContact(contact);
-	GetDatabase()->contactsModel()->update();
-}
-
-void Dispatcher::actionNewHistory(const QJsonObject& root)
-{
-	QJsonArray historyArray = root["history"].toArray();
-	for (const QJsonValue &data : historyArray)
-	{
-		QJsonObject object = data.toObject();
-		QVariantMap histoty = object.toVariantMap();
-		histoty["sync"] = true;
-		if (GetDatabase()->appendHistory(histoty) == 0)
-		{
-			LOGW("Can't append history!");
-			return;
-		}
-
-		// Update history in HiwsoryView
-		//GetDatabase()->historyModel()->update(histoty["cid"].toInt());
-
-		// Self contact
-		if (histoty["cid"].toInt() == GetSettings()->params()["id"].toInt())
-			continue;
-
-		// Check contacts with history
-		if (!GetDatabase()->contactExists(histoty["cid"].toInt()))
-		{
-			QJsonObject rootObject;
-			rootObject["id"] = histoty["cid"].toInt();
-			rootObject["action"] = static_cast<int>(Action::QueryContact);
-			socket_->sendMessage(QJsonDocument(rootObject).toJson(QJsonDocument::Compact));
-		}
-	}
-}
-
-bool Dispatcher::waitConnected()
-{
-	QFuture<bool> future = QtConcurrent::run([this]() {
-		emit connectState(static_cast<int>(ConnectState::Connecting));
+	QFuture<int> future = QtConcurrent::run([this]() {
+		ConnectState result = ConnectState::Connecting;
+		emit connectState(static_cast<int>(result));
 		LOG("Connecting to server ..");
-		QThread::msleep(50);
 
 		int count = 30;
 		while (!connected_ && count-- > 0)
 			QThread::msleep(100);
 
-		bool result = connected_;
-		if (result)
+		if (connected_)
 		{
-			emit connectState(static_cast<int>(ConnectState::Connected));
+			result = ConnectState::Connected;
+			emit connectState(static_cast<int>(result));
 			LOG("Connected to server!");
 		}
 		else
 		{
-			emit connectState(static_cast<int>(ConnectState::NotConneted));
+			result = ConnectState::NotConneted;
+			emit connectState(static_cast<int>(result));
 			LOGW("Not connected!");
 		}
 
-		return result;
+		return static_cast<int>(result);
 	});
 
-	return future.result();
-}
-
-QString Dispatcher::convertImageToBase64(const QString &fileName, QString &newName) const
-{
-	QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
-	QString oldName = fileName;
-#ifdef WIN32
-	oldName = oldName.replace('/', '\\').removeFirst();
-#endif
-	QString copyName = GetSettings()->imagePath() + QDir::separator() + uuid;
-	QFile::copy(oldName, copyName);
-
-	QFile file(copyName);
-	if (!file.open(QIODevice::ReadOnly))
-	{
-		LOGW("Can't open image file " << newName.toStdString());
-		return "";
-	}
-
-	QByteArray imageData = file.readAll();
-	QString encoded = QString(imageData.toBase64());
-	newName = uuid;
-	return encoded;
-}
-
-QString Dispatcher::convertImageFromBase84(const QString &base64, const QString &dir) const
-{
-	QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
-	QByteArray imageData = QByteArray::fromBase64(base64.toLocal8Bit());
-	QString fileName = dir + QDir::separator() + uuid;
-
-	QFile file(fileName);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
-	{
-		LOGW("Can't create image file " << fileName.toStdString());
-		return "";
-	}
-
-	file.write(imageData);
-	file.flush();
-	return uuid;
-}
-
-QVariantMap Dispatcher::selfContactInfo() const
-{
-	QVariantMap contact{
-		{"id", 0},
-		{"name", ""},
-		{"login", ""},
-		{"image", ""},
-		{"phone", ""}
-	};
-
-	contact["id"] = GetSettings()->params()["id"].toInt();
-	contact["name"] = GetSettings()->params()["name"].toString();
-	contact["login"] = GetSettings()->params()["login"].toString();
-	contact["image"] = GetSettings()->params()["image"].toString();
-	contact["phone"] = GetSettings()->params()["phone"].toString();
-
-	return contact;
+	connectWatcher_.setFuture(future);
 }

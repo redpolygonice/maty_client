@@ -21,7 +21,7 @@ Window {
 	Component.onCompleted: {
 		load()
 
-		dispatcher.onConnectStatus.connect(function(status) {
+		dispatcher.onConnectState.connect(function(status) {
 			if (status === 2)
 			{
 				if (messageBox === null || messageBox === undefined)
@@ -193,7 +193,7 @@ Window {
 			return
 		}
 
-		dispatcher.authContact({ "login": loginText.text, "password": passwordText.text }, false);
+		dispatcher.authContact({ "login": loginText.text, "password": passwordText.text, "autologin": false });
 
 		dispatcher.onAuth.connect(function(code) {
 			if (code === 0)

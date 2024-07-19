@@ -9,6 +9,8 @@ Rectangle {
 
 	property int selfId: 0
 	property int currentId: -1
+	property int currentCid: -1
+	property int currentRid: -1
 	property int maxItemWidth: mainRect.width * 0.7
 
 	Component.onCompleted: {
@@ -112,7 +114,7 @@ Rectangle {
 							font.pointSize: Theme.fontPointSize
 							wrapMode: Text.Wrap
 							color: Theme.textColor
-							selectionColor: "#aaaaaa"
+							selectionColor: Theme.selectionColor
 							selectByKeyboard: true
 							selectByMouse: true
 							background: Rectangle {
@@ -128,6 +130,8 @@ Rectangle {
 							onClicked: (mouse) => {
 								listView.currentIndex = index
 								currentId = id
+								currentCid = cid
+								currentRid = rid
 
 								if (mouse.button === Qt.RightButton)
 								{
@@ -159,36 +163,6 @@ Rectangle {
 				spacing: 10
 				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-				// RoundedImage {
-				// 	id: topImage
-				// 	srcwidth: 36
-				// 	srcheight: 36
-				// 	imgsource: {
-				// 		var imageFile = contactsView.currentModel.card(contactsView.currentIndex)["image"]
-				// 		if (imageFile === null || imageFile === undefined || imageFile.length === 0)
-				// 			return ""
-				// 		else
-				// 		{
-				// 			if (contactsView.currentModel === searchModel)
-				// 				return "file:///" + settings.tempPath() + "/" + imageFile
-				// 			else
-				// 				return "file:///" + settings.imagePath() + "/" + imageFile
-				// 		}
-				// 	}
-
-				// 	MouseArea {
-				// 		id: topImageArea
-				// 		anchors.fill: parent
-				// 		acceptedButtons: Qt.LeftButton | Qt.RightButton
-				// 		hoverEnabled: true
-				// 		cursorShape: Qt.PointingHandCursor
-				// 		onClicked: {
-				// 			contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
-				// 			contactInfoDlg.open()
-				// 		}
-				// 	}
-				// }
-
 				Text {
 					id: text
 					text: contactsView.currentModel.card(contactsView.currentIndex)["name"]
@@ -198,7 +172,6 @@ Rectangle {
 					elide: Text.ElideRight
 					verticalAlignment: Text.AlignVCenter
 					horizontalAlignment: Text.AlignLeft
-					Layout.fillWidth: true
 
 					MouseArea {
 						id: topNameArea
@@ -211,6 +184,10 @@ Rectangle {
 							contactInfoDlg.open()
 						}
 					}
+				}
+
+				Label {
+					Layout.fillWidth: true
 				}
 			}
 		}
@@ -263,7 +240,6 @@ Rectangle {
 			onTriggered: {
 				messageView.text.text = listView.currentItem.text.text
 				messageView.modify = true
-				messageView.id = currentId
 				messageView.text.focus = true
 			}
 		}
@@ -315,7 +291,7 @@ Rectangle {
 		messageText: "Remove current history record ?"
 
 		onYesClicked: {
-			dispatcher.removeHistory(currentId)
+			dispatcher.removeHistory({ "hid": currentId, "cid": currentCid, "rid": currentRid })
 			historyModel.update(contactsView.currentId)
 		}
 	}

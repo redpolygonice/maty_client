@@ -1,5 +1,6 @@
 #include "settings.h"
 #include "log.h"
+#include "common.h"
 #include "crypt.h"
 
 #include <QCoreApplication>
@@ -67,9 +68,9 @@ QString Settings::dataPath()
 {
 	QDir appDir = QCoreApplication::applicationDirPath();
 
-#ifdef QT_DEBUG
-	appDir.cdUp();
-#endif
+	if (isQtCreatorParentProc())
+		appDir.cdUp();
+
 
 	QDir dataDir = appDir.path() + QDir::separator() + "data";
 	if (!dataDir.exists())

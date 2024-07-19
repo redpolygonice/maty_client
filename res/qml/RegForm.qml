@@ -22,7 +22,7 @@ Window {
 	}
 
 	Component.onCompleted: {
-		dispatcher.onConnectStatus.connect(function(status) {
+		dispatcher.onConnectState.connect(function(status) {
 			if (status === 2)
 			{
 				messageBox.messageText = "Not connected to server. Try again later!!"
@@ -219,7 +219,7 @@ Window {
 		dispatcher.regContact({ "name": nameText.text, "login": loginText.text,
 								  "password": passwordText.text, "image": imageFile, "phone": phoneText.text });
 
-		dispatcher.onRegistration.connect(function(code) {
+		dispatcher.onReg.connect(function(code) {
 			if (code === 0)
 			{
 				save()
