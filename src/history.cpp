@@ -21,7 +21,7 @@ void HistoryService::add(const QVariantMap& data)
 	int hid = GetDatabase()->appendHistory(data);
 	if (hid == 0)
 	{
-		LOGW("Can't append history, try again later!");
+		LOGW("Can't append history!");
 		return;
 	}
 
@@ -36,7 +36,7 @@ void HistoryService::modify(const QVariantMap& data)
 {
 	if (!GetDatabase()->modifyHistory(data))
 	{
-		LOGW("Can't modify history, try again later!");
+		LOGW("Can't modify history!");
 		return;
 	}
 
@@ -48,9 +48,9 @@ void HistoryService::modify(const QVariantMap& data)
 
 void HistoryService::remove(const QVariantMap& data)
 {
-	if (!GetDatabase()->removeHistory(data["hid"].toInt()))
+	if (!GetDatabase()->removeHistory(data))
 	{
-		LOGW("Can't remove history, try again later!");
+		LOGW("Can't remove history!");
 		return;
 	}
 
@@ -64,7 +64,7 @@ void HistoryService::clear(int cid)
 {
 	if (!GetDatabase()->clearHistory(cid))
 	{
-		LOGW("Can't clear history, try again later!");
+		LOGW("Can't clear history!");
 		return;
 	}
 
@@ -84,7 +84,9 @@ void HistoryService::actionNew(const QJsonObject& root)
 		// Append history record
 		QJsonObject object = data.toObject();
 		QVariantMap histoty = object.toVariantMap();
+		histoty["update"] = true;
 		histoty["sync"] = true;
+
 		if (GetDatabase()->appendHistory(histoty) == 0)
 		{
 			LOGW("Can't append history!");
@@ -119,4 +121,40 @@ void HistoryService::actionNew(const QJsonObject& root)
 			GetDispatcher()->sendMessage(QJsonDocument(rootObject).toJson(QJsonDocument::Compact));
 		}
 	}
+}
+
+void HistoryService::actionRemove(const QJsonObject& root)
+{
+	QJsonArray historyArray = root["history"].toArray();
+	for (const QJsonValue &data : historyArray)
+	{
+		QVariantMap histoty = data.toObject().toVariantMap();
+		histoty["update"] = true;
+		if (!GetDatabase()->removeHistory(histoty))
+			LOGW("Can't remove history!");
+	}
+
+	GetDispatcher()->emitHistoryUpdate();
+}
+
+void HistoryService::actionModify(const QJsonObject& root)
+{
+	QJsonArray historyArray = root["history"].toArray();
+	for (const QJsonValue &data : historyArray)
+	{
+		QVariantMap histoty = data.toObject().toVariantMap();
+		histoty["update"] = true;
+		if (!GetDatabase()->modifyHistory(histoty))
+			LOGW("Can't modify history!");
+	}
+
+	GetDispatcher()->emitHistoryUpdate();
+}
+
+void HistoryService::actionClear(const QJsonObject& root)
+{
+	if (!GetDatabase()->clearHistory(root["cid"].toInt()))
+		LOGW("Can't clear history!");
+
+	GetDispatcher()->emitHistoryUpdate();
 }

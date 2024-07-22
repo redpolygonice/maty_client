@@ -63,11 +63,12 @@ class Dispatcher : public QObject
 
 private:
 	std::atomic_bool connected_;
+	bool update_;
 	QObject *rootItem_;
 	SocketPtr socket_;
 	SearchModel searchModel_;
-	ContactsServicePtr contactsSvc_;
-	HistoryServicePtr historySvc_;
+	ContactsServicePtr contacts_;
+	HistoryServicePtr history_;
 	QFutureWatcher<int> connectWatcher_;
 
 private:
@@ -81,6 +82,8 @@ signals:
 	void auth(int code);
 	void connectState(int state);
 	void searchResult(int result);
+	void historyUpdated();
+	void contactsUpdated();
 	void setSelfId(int id);
 
 private slots:
@@ -94,24 +97,28 @@ public:
 	void sendMessage(const QString &message);
 	SocketPtr socket() { return socket_; }
 	SearchModel *searchModel() { return &searchModel_; }
-	void setSearchResult(int result) { emit searchResult(result); }
+	void emitSearchResult(int result) { emit searchResult(result); }
+	void emitHistoryUpdate() { emit historyUpdated(); }
+	void emitContactsUpdate() { emit contactsUpdated(); }
 
 	Q_INVOKABLE void regContact(const QVariantMap &data);
 	Q_INVOKABLE void authContact(const QVariantMap &data);
 	Q_INVOKABLE bool isConnected() const { return connected_; }
-	Q_INVOKABLE void addContact(QVariantMap &data) { contactsSvc_->add(data); }
-	Q_INVOKABLE void addSearchContact(const QVariantMap &data) { contactsSvc_->addSearch(data); }
-	Q_INVOKABLE void removeContact(const QVariantMap &data) { contactsSvc_->remove(data); }
-	Q_INVOKABLE void searchContact(const QString &text) { contactsSvc_->search(text); }
-	Q_INVOKABLE QVariantMap selfContactInfo() const { return contactsSvc_->selfInfo(); }
-	Q_INVOKABLE void addHistory(const QVariantMap &data) { historySvc_->add(data); }
-	Q_INVOKABLE void modifyHistory(const QVariantMap &data) { historySvc_->modify(data); }
-	Q_INVOKABLE void removeHistory(const QVariantMap& data) { historySvc_->remove(data); }
-	Q_INVOKABLE void clearHistory(int cid) { historySvc_->clear(cid); }
+	Q_INVOKABLE void addContact(QVariantMap &data) { contacts_->add(data); }
+	Q_INVOKABLE void addSearchContact(const QVariantMap &data) { contacts_->addSearch(data); }
+	Q_INVOKABLE void removeContact(const QVariantMap &data) { contacts_->remove(data); }
+	Q_INVOKABLE void searchContact(const QString &text) { contacts_->search(text); }
+	Q_INVOKABLE QVariantMap selfContactInfo() const { return contacts_->selfInfo(); }
+	Q_INVOKABLE void addHistory(const QVariantMap &data) { history_->add(data); }
+	Q_INVOKABLE void modifyHistory(const QVariantMap &data) { history_->modify(data); }
+	Q_INVOKABLE void removeHistory(const QVariantMap& data) { history_->remove(data); }
+	Q_INVOKABLE void clearHistory(int cid) { history_->clear(cid); }
 
 private:
 	void actionReg(const QJsonObject &root);
 	void actionAuth(const QJsonObject &root);
+	void actionUpdateAll(const QJsonObject &root);
+	void logMessage(const QString &message);
 	template <typename Function> void waitConnected(Function &&func);
 };
 

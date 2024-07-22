@@ -23,8 +23,8 @@ void ContactsService::add(QVariantMap& data)
 {
 	if (GetDatabase()->contactExists(data["id"].toInt()))
 		return;
-
-	data["image"] = Image::convertFromBase84(data["image"].toString(), GetSettings()->imagePath());
+	
+	data["image"] = Image::convertFromBase64(data["image"].toString(), GetSettings()->imagePath());
 	if (!GetDatabase()->appendContact(data))
 	{
 		LOGW("Can't append contact, try again later!");
@@ -123,15 +123,15 @@ void ContactsService::actionSearch(QJsonObject& root)
 		for (const QJsonValue &contact : contactsArray)
 		{
 			QJsonObject object = contact.toObject();
-			object["image"] = Image::convertFromBase84(object["image"].toString(), GetSettings()->tempPath());
+			object["image"] = Image::convertFromBase64(object["image"].toString(), GetSettings()->tempPath());
 			contacts.push_back(object);
 		}
 
 		root["contacts"] = contacts;
 		GetDispatcher()->searchModel()->update(root);
 	}
-
-	GetDispatcher()->setSearchResult(static_cast<int>(result));
+	
+	GetDispatcher()->emitSearchResult(static_cast<int>(result));
 }
 
 void ContactsService::actionQuery(const QJsonObject& root)

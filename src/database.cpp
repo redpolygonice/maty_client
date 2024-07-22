@@ -45,26 +45,28 @@ bool Database::createTables()
 {
 	QSqlQuery query(db_);
 	if (!query.exec("CREATE TABLE " + QString(kHistoryName) + " ("
-					"id INTEGER PRIMARY KEY AUTOINCREMENT,"
-					"cid INTEGER KEY NOT NULL,"
-					"rid INTEGER KEY NOT NULL,"
-					"text TEXT NOT NULL,"
-					"sync BOOLEAN,"
-					"ts TIMESTAMP NOT NULL)"))
+															  "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+															  "hid INTEGER KEY NOT NULL, " // Id from server history
+															  "cid INTEGER KEY NOT NULL," // Sender id
+															  "rid INTEGER KEY NOT NULL," // Receyver id
+															  "text TEXT NOT NULL,"
+															  "sync BOOLEAN,"
+															  "state INTEGER,"
+															  "ts TIMESTAMP NOT NULL)"))
 	{
 		LOGE(query.lastError().text().toStdString());
 		return false;
 	}
 
 	if (!query.exec("CREATE TABLE " + QString(kContactsName) + " ("
-					"id INTEGER PRIMARY KEY, "
-					"name VARCHAR(50) NOT NULL,"
-					"login VARCHAR(50) NOT NULL,"
-					"image VARCHAR(50),"
-					"phone VARCHAR(20),"
-					"about TEXT,"
-					"approved BOOLEAN,"
-					"ts TIMESTAMP NOT NULL)"))
+															   "id INTEGER PRIMARY KEY, "
+															   "name VARCHAR(50) NOT NULL,"
+															   "login VARCHAR(50) NOT NULL,"
+															   "image VARCHAR(50),"
+															   "phone VARCHAR(20),"
+															   "about TEXT,"
+															   "approved BOOLEAN,"
+															   "ts TIMESTAMP NOT NULL)"))
 	{
 		LOGE(query.lastError().text().toStdString());
 		return false;
@@ -78,15 +80,33 @@ void Database::close()
 	db_.close();
 }
 
+void Database::remove()
+{
+	QDir dbDir = Settings::dataPath() + QDir::separator() + "db";
+	QString dbFile = dbDir.absolutePath() + QDir::separator() + kDbName;
+
+	if (!QFile::exists(dbFile))
+		return;
+
+	if (db_.isOpen())
+	{
+		QSqlDatabase::removeDatabase(db_.connectionName());
+		db_.close();
+	}
+
+	QFile::remove(dbFile);
+}
+
 int Database::appendHistory(const QVariantMap &data)
 {
 	if (data["cid"].toInt() <= 0)
 		return 0;
 
 	QSqlQuery query(db_);
-	query.prepare("INSERT INTO " + QString(kHistoryName) + " (cid, rid, text, sync, ts)"
-					" VALUES (:cid, :rid, :text, :sync, :ts)");
+	query.prepare("INSERT INTO " + QString(kHistoryName) + " (hid, cid, rid, text, sync, ts)"
+														   " VALUES (:hid, :cid, :rid, :text, :sync, :ts)");
 
+	query.bindValue(":hid", data["hid"].toInt());
 	query.bindValue(":cid", data["cid"].toInt());
 	query.bindValue(":rid", data["rid"].toInt());
 	query.bindValue(":text", data["text"].toString());
@@ -119,8 +139,12 @@ int Database::appendHistory(const QVariantMap &data)
 bool Database::modifyHistory(const QVariantMap &data)
 {
 	QSqlQuery query(db_);
-	query.prepare("UPDATE " + QString(kHistoryName) + " SET text = :text WHERE id = :id");
-	query.bindValue(":id", data["hid"].toInt());
+	if (data["update"].toBool())
+		query.prepare("UPDATE " + QString(kHistoryName) + " SET text = :text WHERE hid = :hid");
+	else
+		query.prepare("UPDATE " + QString(kHistoryName) + " SET text = :text WHERE id = :hid");
+
+	query.bindValue(":hid", data["hid"].toInt());
 	query.bindValue(":text", data["text"].toString());
 
 	if (!query.exec())
@@ -132,11 +156,15 @@ bool Database::modifyHistory(const QVariantMap &data)
 	return true;
 }
 
-bool Database::removeHistory(int id)
+bool Database::removeHistory(const QVariantMap &data)
 {
 	QSqlQuery query(db_);
-	query.prepare("DELETE FROM " + QString(kHistoryName) + " WHERE id = :id");
-	query.bindValue(":id", id);
+	if (data["update"].toBool())
+		query.prepare("DELETE FROM " + QString(kHistoryName) + " WHERE hid = :hid");
+	else
+		query.prepare("DELETE FROM " + QString(kHistoryName) + " WHERE id = :hid");
+
+	query.bindValue(":hid", data["hid"].toInt());
 
 	if (!query.exec())
 	{
@@ -184,7 +212,7 @@ bool Database::appendContact(const QVariantMap &contact)
 {
 	QSqlQuery query(db_);
 	query.prepare("INSERT INTO " + QString(kContactsName) + " (id, name, login, image, phone, approved, ts)"
-												" VALUES (:id, :name, :login, :image, :phone, :approved, :ts)");
+															" VALUES (:id, :name, :login, :image, :phone, :approved, :ts)");
 
 	query.bindValue(":id", contact["id"].toInt());
 	query.bindValue(":name", contact["name"].toString());
@@ -207,7 +235,7 @@ bool Database::modifyContact(const QVariantMap &contact)
 {
 	QSqlQuery query(db_);
 	query.prepare("UPDATE " + QString(kContactsName) + " SET name = :name, login = :login image = :image, phone = :phone"
-														" WHERE id = :id");
+													   " WHERE id = :id");
 
 	query.bindValue(":id", contact["id"].toInt());
 	query.bindValue(":name", contact["name"].toString());

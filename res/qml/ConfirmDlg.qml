@@ -34,12 +34,6 @@ Dialog {
 		radius: 15
 	}
 
-	header: Label {
-		height: 0
-	}
-
-	footer: Item {}
-
 	ColumnLayout {
 		Layout.topMargin: 20
 		Layout.leftMargin: 20

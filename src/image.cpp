@@ -29,7 +29,7 @@ QString Image::convertToBase64(const QString& fileName, QString& newName)
 	return encoded;
 }
 
-QString Image::convertFromBase84(const QString& base64, const QString& dir)
+QString Image::convertFromBase64(const QString& base64, const QString& dir)
 {
 	QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
 	QByteArray imageData = QByteArray::fromBase64(base64.toLocal8Bit());

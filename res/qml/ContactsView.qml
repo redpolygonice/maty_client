@@ -40,8 +40,8 @@ Rectangle {
 				RoundedImage {
 					id: imageName
 					Layout.leftMargin: 10
-					srcwidth: 42
-					srcheight: 42
+					srcwidth: 44
+					srcheight: 44
 					imgsource: {
 						if (image === 'empty' || image.length === 0 ||
 								image === null || image === undefined)

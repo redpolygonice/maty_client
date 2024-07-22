@@ -23,7 +23,11 @@ public:
 	void remove(const QVariantMap& data);
 	void modify(const QVariantMap &data);
 	void clear(int cid);
+
 	void actionNew(const QJsonObject &root);
+	void actionRemove(const QJsonObject &root);
+	void actionModify(const QJsonObject &root);
+	void actionClear(const QJsonObject &root);
 };
 
 #endif // HISTORY_H

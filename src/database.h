@@ -15,8 +15,6 @@
 #include <QDateTime>
 #include <QSharedPointer>
 
-using HistoryRecord = std::tuple<QString, QString, QDateTime>;
-
 // Sqlite database
 class Database : public QObject
 {
@@ -42,7 +40,7 @@ public:
 
 public:
 	Q_INVOKABLE int appendHistory(const QVariantMap &data);
-	Q_INVOKABLE bool removeHistory(int id);
+	Q_INVOKABLE bool removeHistory(const QVariantMap &data);
 	Q_INVOKABLE bool modifyHistory(const QVariantMap &data);
 	Q_INVOKABLE bool clearHistory(int cid);
 	Q_INVOKABLE bool historyExists(int hid);
@@ -56,6 +54,7 @@ public:
 public:
 	bool open();
 	void close();
+	void remove();
 	bool isOpen() const { return db_.isOpen(); }
 	HistoryModel *historyModel() { return &historyModel_; }
 	ContactsModel *contactsModel() { return &contactsModel_; }

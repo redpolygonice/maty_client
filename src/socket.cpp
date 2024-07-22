@@ -49,7 +49,6 @@ void Socket::closed()
 
 void Socket::textMessageReceived(const QString &message)
 {
-	LOG("Message received: " << message.toStdString());
 	emit messageReceived(message);
 }
 

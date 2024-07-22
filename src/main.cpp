@@ -17,13 +17,16 @@ int main(int argc, char *argv[])
 	QGuiApplication app(argc, argv);
 	QQmlApplicationEngine engine;
 
+	app.setApplicationName("Maty");
+	app.setWindowIcon(QIcon(":/img/coffee.png"));
+
 	Log::create();
 	GetSettings()->load();
 
 	if (!GetDatabase()->open())
 	{
-		qDebug() << "Can't open database!";
-		return 1;
+		LOGE("Can't open database!");
+		return -1;
 	}
 
 	auto loadMain = [&]() {

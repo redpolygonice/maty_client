@@ -10,8 +10,8 @@ Item {
 	height: srcheight
 	antialiasing: true
 
-	property int srcwidth: 66
-	property int srcheight: 66
+	property int srcwidth: 68
+	property int srcheight: 68
 	property string imgsource: ""
 
 	Image {
@@ -36,11 +36,11 @@ Item {
 		width: image.width
 		height: image.height
 		layer.enabled: true
-		layer.samples: 16
-		layer.smooth: true
 		visible: false
 
 		Rectangle {
+			anchors.fill: parent
+			anchors.margins: 2
 			width: image.width
 			height: image.height
 			radius: width / 2

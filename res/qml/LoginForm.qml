@@ -69,6 +69,10 @@ Window {
 				background: Rectangle {
 					color: Theme.backColor1
 				}
+
+				Keys.onPressed: (event) => {
+					onKeyPressed(event.key)
+				}
 			}
 
 			Text {
@@ -86,6 +90,10 @@ Window {
 				echoMode: TextInput.Password
 				background: Rectangle {
 					color: Theme.backColor1
+				}
+
+				Keys.onPressed: (event) => {
+					onKeyPressed(event.key)
 				}
 			}
 
@@ -209,6 +217,14 @@ Window {
 				messageBox.open()
 			}
 		})
+	}
+
+	function onKeyPressed(key)
+	{
+		if (key === Qt.Key_Enter || key === Qt.Key_Return)
+			auth()
+		else if (key === Qt.Key_Escape)
+			Qt.quit()
 	}
 
 	ConfirmDlg {

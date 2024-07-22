@@ -12,7 +12,6 @@ Dialog {
 	height: 400
 	x: mainWindow.width / 2 - width / 2
 	y: mainWindow.height / 2 - height / 2
-	modal: true
 	padding: 0
 	margins: 0
 
@@ -79,8 +78,8 @@ Dialog {
 				RoundedImage {
 					id: contactImage
 					Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-					srcwidth: 70
-					srcheight: 70
+					srcwidth: 72
+					srcheight: 72
 					imgsource: ""
 
 					MouseArea {

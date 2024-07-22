@@ -20,5 +20,6 @@
         <file>img/bullet_red.png</file>
         <file>img/bullet_yellow.png</file>
         <file>qml/RoundedImage.qml</file>
+        <file>img/coffee.png</file>
     </qresource>
 </RCC>

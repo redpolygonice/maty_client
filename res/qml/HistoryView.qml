@@ -16,6 +16,10 @@ Rectangle {
 	Component.onCompleted: {
 		if (settings.params["id"] !== undefined)
 			selfId = settings.params["id"]
+
+		dispatcher.onHistoryUpdated.connect(function() {
+			historyModel.update(contactsView.currentId)
+		})
 	}
 
 	ContactInfoDlg {
@@ -59,12 +63,12 @@ Rectangle {
 
 			Row {
 				anchors.fill: parent
-				spacing: 7
+				spacing: 5
 
 				RoundedImage {
 					id: rowImage
-					srcwidth: 36
-					srcheight: 36
+					srcwidth: 38
+					srcheight: 38
 					imgsource: {
 						var imageFile = ""
 						if (cid === selfId)
@@ -236,6 +240,7 @@ Rectangle {
 		}
 
 		Action {
+			enabled: currentCid === selfId
 			text: "Edit"
 			onTriggered: {
 				messageView.text.text = listView.currentItem.text.text
@@ -245,6 +250,7 @@ Rectangle {
 		}
 
 		Action {
+			enabled: currentCid === selfId
 			text: "Remove"
 			onTriggered: {
 				removeDlg.open()
