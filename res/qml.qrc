@@ -13,8 +13,8 @@
         <file>qml/ConfirmDlg.qml</file>
         <file>qml/LoginForm.qml</file>
         <file>qml/RegForm.qml</file>
-        <file>qml/ContactInfoDlg.qml</file>
-        <file>qml/ImageDlg.qml</file>
+        <file>qml/ContactInfoView.qml</file>
+        <file>qml/ImageView.qml</file>
         <file>qml/common.js</file>
         <file>img/bullet_green.png</file>
         <file>img/bullet_red.png</file>

@@ -5,19 +5,15 @@ import QtQuick.Controls.Basic
 import QtQuick.Window
 import "theme.js" as Theme
 
-Window {
+Rectangle {
 	id: imageDlg
 	visible: false
-	width: imgwidth
-	height: imgheight
-	x: mainWindow.width / 2 - width / 2
-	y: mainWindow.height / 2 - height / 2
-	modality: Qt.ApplicationModal
-	flags: Qt.Tool
+	anchors.fill: parent
 
 	property string contactImageSrc: ""
-	property int imgwidth: 600
-	property int imgheight: 500
+	property string contactName: ""
+	property int imgwidth: 700
+	property int imgheight: 600
 
 	Image {
 		id: image

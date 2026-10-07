@@ -22,10 +22,6 @@ Rectangle {
 		})
 	}
 
-	ContactInfoDlg {
-		id: contactInfoDlg
-	}
-
 	Component {
 		id: delegate
 
@@ -184,8 +180,12 @@ Rectangle {
 						hoverEnabled: true
 						cursorShape: Qt.PointingHandCursor
 						onClicked: {
-							contactInfoDlg.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
-							contactInfoDlg.open()
+							hideContactImage()
+							hideContactInfo()
+							contactInfo.parent = contentRect
+							contactInfo.self = false
+							contactInfo.contactMap = contactsView.currentModel.card(contactsView.currentIndex)
+							showContactInfo();
 						}
 					}
 				}

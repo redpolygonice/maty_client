@@ -10,8 +10,8 @@ Item {
 	height: srcheight
 	antialiasing: true
 
-	property int srcwidth: 68
-	property int srcheight: 68
+	property int srcwidth: 72
+	property int srcheight: 72
 	property string imgsource: ""
 
 	Image {

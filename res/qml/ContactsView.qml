@@ -19,10 +19,6 @@ Rectangle {
 	property string contactNameText: ""
 	property variant currentModel: contactsModel
 
-	ContactInfoDlg {
-		id: contactInfoDlg
-	}
-
 	Component {
 		id: delegate
 
@@ -79,12 +75,17 @@ Rectangle {
 				onClicked: (mouse) => {
 							   currentId = id
 							   listView.currentIndex = index
-							   historyView.positionAtEnd()
-							   mouse.accepted = false
 
 							   if (mouse.button === Qt.RightButton)
 							   {
-								   contextMenu.popup()
+									contextMenu.popup()
+							   }
+							   else
+							   {
+								   hideContactImage()
+								   hideContactInfo()
+								   historyView.positionAtEnd()
+								   mouse.accepted = false
 							   }
 						   }
 			}
@@ -157,9 +158,12 @@ Rectangle {
 								hoverEnabled: true
 								cursorShape: Qt.PointingHandCursor
 								onClicked: {
-									contactInfoDlg.self = true
-									contactInfoDlg.contactMap = dispatcher.selfContactInfo()
-									contactInfoDlg.open()
+									hideContactImage()
+									hideContactInfo()
+									contactInfo.parent = contentRect
+									contactInfo.self = true
+									contactInfo.contactMap = dispatcher.selfContactInfo()
+									showContactInfo();
 								}
 							}
 						}
@@ -246,8 +250,12 @@ Rectangle {
 		Action {
 			text: "Contact info"
 			onTriggered: {
-				contactInfoDlg.contactMap = currentModel.card(currentIndex)
-				contactInfoDlg.open()
+				hideContactImage()
+				hideContactInfo()
+				contactInfo.parent = contentRect
+				contactInfo.self = false
+				contactInfo.contactMap = currentModel.card(currentIndex)
+				showContactInfo();
 			}
 		}
 

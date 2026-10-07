@@ -16,6 +16,14 @@ ApplicationWindow {
 	property variant loginForm
 	property string connectImageSrc: ""
 
+	ContactInfoView {
+		id: contactInfo
+	}
+
+	ImageView {
+		id: contactImage
+	}
+
 	Timer {
 		id: timer
 		interval: 100; running: false; repeat: false
@@ -197,5 +205,27 @@ ApplicationWindow {
 				messageDlg.open()
 			}
 		})
+	}
+
+	function showContactInfo()
+	{
+		contactInfo.visible = true;
+	}
+
+	function hideContactInfo()
+	{
+		if (contactInfo.visible)
+			contactInfo.visible = false;
+	}
+
+	function showContactImage()
+	{
+		contactImage.visible = true;
+	}
+
+	function hideContactImage()
+	{
+		if (contactImage.visible)
+			contactImage.visible = false;
 	}
 }

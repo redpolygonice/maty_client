@@ -7,20 +7,14 @@ Menu {
 	topPadding: 3
 	bottomPadding: 3
 
-	property variant contactInfoDlg
-
-	Component {
-		id: contactInfoComponent
-		ContactInfoDlg {}
-	}
-
 	Action {
 		text: "My contact"
 		onTriggered: {
-			contactInfoDlg = contactInfoComponent.createObject(mainWindow)
-			contactInfoDlg.self = true
-			contactInfoDlg.contactMap = dispatcher.selfContactInfo()
-			contactInfoDlg.open()
+			hideContactInfo()
+			contactInfo.parent = contentRect
+			contactInfo.self = true
+			contactInfo.contactMap = dispatcher.selfContactInfo()
+			showContactInfo();
 		}
 	}
 

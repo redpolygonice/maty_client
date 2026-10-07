@@ -1,37 +1,21 @@
 import QtQuick
-import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
-import QtQuick.Window
 import "theme.js" as Theme
 
-Dialog {
-	id: contactDlg
+Rectangle {
+	id: contactInfo
 	visible: false
-	width: 350
-	height: 400
-	x: mainWindow.width / 2 - width / 2
-	y: mainWindow.height / 2 - height / 2
-	padding: 0
-	margins: 0
+	anchors.fill: parent
 
 	property variant contactMap: ({})
 	property bool self: false
-
-	background: Rectangle {
-		color: "#FFFFFF"
-		radius: 15
-	}
 
 	onVisibleChanged: {
 		if (visible)
 			load()
 		else
 			self = false
-	}
-
-	ImageDlg {
-		id: imageDlg
 	}
 
 	ColumnLayout {
@@ -59,7 +43,7 @@ Dialog {
 				text: "<b>X</b>"
 				backcolor: "#ffffff"
 				onClicked: {
-					reject();
+					contactInfo.visible = false
 				}
 			}
 		}
@@ -67,17 +51,21 @@ Dialog {
 		Rectangle {
 			id: topRect
 			color: Theme.backColor4
-			width: contactDlg.width
+			width: contactInfo.width
 			height: 80
 			Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+			Layout.margins: 0
+			Layout.fillWidth: true
 
 			RowLayout {
 				anchors.fill: parent
 				Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+				Layout.margins: 0
 
 				RoundedImage {
-					id: contactImage
+					id: contactMiniImage
 					Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+					Layout.margins: 0
 					srcwidth: 72
 					srcheight: 72
 					imgsource: ""
@@ -89,8 +77,11 @@ Dialog {
 						hoverEnabled: true
 						cursorShape: Qt.PointingHandCursor
 						onClicked: {
-							imageDlg.contactImageSrc = contactImage.imgsource
-							imageDlg.showNormal()
+							hideContactImage()
+							contactImage.parent = contentRect
+							contactImage.contactImageSrc = contactMiniImage.imgsource
+							contactImage.contactName = textName.text
+							showContactImage()
 						}
 					}
 				}
@@ -176,47 +167,11 @@ Dialog {
 				color: Theme.backColor4
 			}
 		}
-
-		RowLayout {
-			Layout.fillHeight: true
-			Layout.alignment: Qt.AlignTop
-			Layout.bottomMargin: 5
-			spacing: 10
-
-			Label {
-				Layout.fillWidth: true
-			}
-
-			LabelButton {
-				id: buttonSave
-				visible: self == true
-				backcolor: "#eeeeee"
-				backcolorhover: "#dddddd"
-				text: "Save"
-
-				onClicked: {
-					save()
-					accept()
-				}
-			}
-
-			LabelButton {
-				id: buttonClose
-				backcolor: "#eeeeee"
-				backcolorhover: "#dddddd"
-				Layout.rightMargin: 10
-				text: "Close"
-
-				onClicked: {
-					accept()
-				}
-			}
-		}
 	}
 
 	function clear()
 	{
-		contactImage.imgsource = ""
+		contactMiniImage.imgsource = ""
 		textName.text = ""
 		textLogin.text = ""
 		textPhone.text = ""
@@ -232,13 +187,13 @@ Dialog {
 		var image = contactMap["image"]
 		if (image === null || image === 'empty' ||
 				image.length === 0 || image === undefined)
-			contactImage.imgsource =  "qrc:///img/user.png"
+			contactMiniImage.imgsource =  "qrc:///img/user.png"
 		else
 		{
 			if (contactsView.currentModel === searchModel)
-				contactImage.imgsource = "file:///" + settings.tempPath() + "/" + image
+				contactMiniImage.imgsource = "file:///" + settings.tempPath() + "/" + image
 			else
-				contactImage.imgsource = "file:///" + settings.imagePath() + "/" + image
+				contactMiniImage.imgsource = "file:///" + settings.imagePath() + "/" + image
 		}
 
 		textName.text = contactMap["name"]
