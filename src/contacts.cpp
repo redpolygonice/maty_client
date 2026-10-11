@@ -19,12 +19,12 @@ ContactsService::~ContactsService()
 {
 }
 
-void ContactsService::add(QVariantMap& data)
+void ContactsService::add(const QVariantMap& data)
 {
 	if (GetDatabase()->contactExists(data["id"].toInt()))
 		return;
-	
-	data["image"] = Image::convertFromBase64(data["image"].toString(), GetSettings()->imagePath());
+
+	data["image_name"] = Image::convertFromBase64(data["image_data"].toString(), GetSettings()->imagePath());
 	if (!GetDatabase()->appendContact(data))
 	{
 		LOGW("Can't append contact, try again later!");
@@ -32,7 +32,7 @@ void ContactsService::add(QVariantMap& data)
 	}
 
 	QJsonObject object;
-	object["action"] =static_cast<int>(Action::LinkContact);
+	object["action"] = static_cast<int>(Action::LinkContact);
 	object["cid"] = GetSettings()->params()["id"].toInt();
 	object["rid"] = data["id"].toInt();
 	object["approved"] = data["approved"].toBool();
@@ -40,22 +40,47 @@ void ContactsService::add(QVariantMap& data)
 	GetDispatcher()->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
+void ContactsService::modifySelf(const QVariantMap& data)
+{
+	GetSettings()->params()["name"] = data["name"];
+	GetSettings()->params()["phone"] = data["phone"];
+	GetSettings()->params()["about"] = data["about"];
+	GetSettings()->save();
+
+	QJsonObject object = QJsonObject::fromVariantMap(data);
+	object["action"] = static_cast<int>(Action::ModifyContact);
+
+	QString imagePath = GetSettings()->imagePath() + QDir::separator() + GetSettings()->params()["image_name"].toString();
+	object["image_data"] = Image::convertToBase64(imagePath);
+	object["image_hash"] = GetSettings()->params()["image_hash"].toString();
+
+	GetDispatcher()->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
 void ContactsService::addSearch(const QVariantMap& data)
 {
-	if (!GetDatabase()->appendContact(data))
+	QString imageName = data["image"].toString();
+	QString oldName = GetSettings()->tempPath() + QDir::separator() + imageName;
+	QString newName = GetSettings()->imagePath() + QDir::separator() + imageName;
+	QFile::rename(oldName, newName);
+
+	QVariantMap contact = data;
+	contact["image_name"] = imageName;
+	QString imageData = std::move(Image::convertToBase64(newName));
+	QString imageHash = std::move(QString(QCryptographicHash::hash(imageData.toUtf8(),
+		QCryptographicHash::Sha256).toHex()));
+	contact["image_hash"] = imageHash;
+
+	if (!GetDatabase()->appendContact(contact))
 	{
 		LOGW("Can't append contact, try again later!");
 		return;
 	}
 
-	QString oldName = GetSettings()->tempPath() + QDir::separator() + data["image"].toString();
-	QString newName = GetSettings()->imagePath() + QDir::separator() + data["image"].toString();
-	QFile::rename(oldName, newName);
-
 	QJsonObject object;
-	object["action"] =static_cast<int>(Action::LinkContact);
+	object["action"] = static_cast<int>(Action::LinkContact);
 	object["cid"] = GetSettings()->params()["id"].toInt();
-	object["rid"] = data["id"].toInt();
+	object["rid"] = contact["id"].toInt();
 	object["approved"] = true;
 
 	GetDispatcher()->sendMessage(QJsonDocument(object).toJson(QJsonDocument::Compact));
@@ -70,7 +95,7 @@ void ContactsService::remove(const QVariantMap& data)
 		return;
 	}
 
-	QString imageName = GetSettings()->imagePath() + QDir::separator() + data["image"].toString();
+	QString imageName = GetSettings()->imagePath() + QDir::separator() + data["image_name"].toString();
 	QFile::remove(imageName);
 
 	GetDatabase()->clearHistory(id);
@@ -101,14 +126,16 @@ QVariantMap ContactsService::selfInfo() const
 		{"name", ""},
 		{"login", ""},
 		{"image", ""},
-		{"phone", ""}
+		{"phone", ""},
+		{"about", ""}
 	};
 
 	contact["id"] = GetSettings()->params()["id"].toInt();
 	contact["name"] = GetSettings()->params()["name"].toString();
 	contact["login"] = GetSettings()->params()["login"].toString();
-	contact["image"] = GetSettings()->params()["image"].toString();
+	contact["image"] = GetSettings()->params()["image_name"].toString();
 	contact["phone"] = GetSettings()->params()["phone"].toString();
+	contact["about"] = GetSettings()->params()["about"].toString();
 
 	return contact;
 }
@@ -123,14 +150,14 @@ void ContactsService::actionSearch(QJsonObject& root)
 		for (const QJsonValue &contact : contactsArray)
 		{
 			QJsonObject object = contact.toObject();
-			object["image"] = Image::convertFromBase64(object["image"].toString(), GetSettings()->tempPath());
+			object["image_name"] = Image::convertFromBase64(object["image_data"].toString(), GetSettings()->tempPath());
 			contacts.push_back(object);
 		}
 
 		root["contacts"] = contacts;
 		GetDispatcher()->searchModel()->update(root);
 	}
-	
+
 	GetDispatcher()->emitSearchResult(static_cast<int>(result));
 }
 

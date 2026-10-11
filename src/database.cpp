@@ -48,7 +48,7 @@ bool Database::createTables()
 															  "id INTEGER PRIMARY KEY AUTOINCREMENT,"
 															  "hid INTEGER KEY NOT NULL, " // Id from server history
 															  "cid INTEGER KEY NOT NULL," // Sender id
-															  "rid INTEGER KEY NOT NULL," // Receyver id
+															  "rid INTEGER KEY NOT NULL," // Receiver id
 															  "text TEXT NOT NULL,"
 															  "sync BOOLEAN,"
 															  "state INTEGER,"
@@ -62,7 +62,8 @@ bool Database::createTables()
 															   "id INTEGER PRIMARY KEY, "
 															   "name VARCHAR(50) NOT NULL,"
 															   "login VARCHAR(50) NOT NULL,"
-															   "image VARCHAR(50),"
+															   "image_name VARCHAR(36),"
+															   "image_hash VARCHAR(64),"
 															   "phone VARCHAR(20),"
 															   "about TEXT,"
 															   "approved BOOLEAN,"
@@ -211,14 +212,17 @@ bool Database::historyExists(int hid)
 bool Database::appendContact(const QVariantMap &contact)
 {
 	QSqlQuery query(db_);
-	query.prepare("INSERT INTO " + QString(kContactsName) + " (id, name, login, image, phone, approved, ts)"
-															" VALUES (:id, :name, :login, :image, :phone, :approved, :ts)");
+	query.prepare("INSERT INTO " + QString(kContactsName) + " (id, name, login, image_name, image_hash, phone, about, approved, ts)"
+															" VALUES (:id, :name, :login, :image_name, :image_hash, :phone, :about,"
+															":approved, :ts)");
 
 	query.bindValue(":id", contact["id"].toInt());
 	query.bindValue(":name", contact["name"].toString());
 	query.bindValue(":login", contact["login"].toString());
-	query.bindValue(":image", contact["image"].toString());
+	query.bindValue(":image_name", contact["image_name"].toString());
+	query.bindValue(":image_hash", contact["image_hash"].toString());
 	query.bindValue(":phone", contact["phone"].toString());
+	query.bindValue(":about", contact["about"].toString());
 	query.bindValue(":approved", contact["approved"].toBool());
 	query.bindValue(":ts", QVariant(QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss")));
 
@@ -234,14 +238,16 @@ bool Database::appendContact(const QVariantMap &contact)
 bool Database::modifyContact(const QVariantMap &contact)
 {
 	QSqlQuery query(db_);
-	query.prepare("UPDATE " + QString(kContactsName) + " SET name = :name, login = :login image = :image, phone = :phone"
-													   " WHERE id = :id");
+	query.prepare("UPDATE " + QString(kContactsName) + " SET name = :name, login = :login, image_name = :image_name,"
+													   "image_hash = :image_hash, phone = :phone, about = :about WHERE id = :id");
 
 	query.bindValue(":id", contact["id"].toInt());
 	query.bindValue(":name", contact["name"].toString());
 	query.bindValue(":login", contact["login"].toString());
-	query.bindValue(":image", contact["image"].toString());
+	query.bindValue(":image_name", contact["image_name"].toString());
+	query.bindValue(":image_hash", contact["image_hash"].toString());
 	query.bindValue(":phone", contact["phone"].toString());
+	query.bindValue(":about", contact["about"].toString());
 
 	if (!query.exec())
 	{
@@ -286,8 +292,10 @@ QVariantMap Database::contactData(int id)
 		contact["id"] = query.value("id").toInt();
 		contact["name"] = query.value("name").toString();
 		contact["login"] = query.value("login").toString();
-		contact["image"] = query.value("image").toString();
+		contact["image_name"] = query.value("image_name").toString();
+		contact["image_hash"] = query.value("image_hash").toString();
 		contact["phone"] = query.value("phone").toString();
+		contact["about"] = query.value("about").toString();
 		contact["approved"] = query.value("approved").toBool();
 	}
 

@@ -6,6 +6,9 @@
 #include <QString>
 #include <QVariantMap>
 
+constexpr char kCertName[] = "client.crt";
+constexpr char kKeyName[] = "client.key";
+
 class Settings : public QObject
 {
 	friend class QSharedPointer<Settings>;
@@ -33,12 +36,12 @@ public:
 	Q_INVOKABLE void saveAuthData(const QVariantMap &map);
 	Q_INVOKABLE bool save();
 
-public:
-	static QString dataPath();
 	bool load();
-
-	QVariantMap &params() { return params_; }
+	QVariantMap& params() { return params_; }
 	void setParams(const QVariantMap &map) { params_ = map; }
+
+	static QString dataPath();
+	static QString certPath();
 
 private:
 	QString settingsPath() const;

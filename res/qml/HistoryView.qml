@@ -68,7 +68,7 @@ Rectangle {
 					imgsource: {
 						var imageFile = ""
 						if (cid === selfId)
-							imageFile = settings.params["image"]
+							imageFile = settings.params["image_name"]
 						else
 							imageFile = image
 

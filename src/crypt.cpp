@@ -1,6 +1,7 @@
 #include "crypt.h"
 
 #include <aes.h>
+#include <QCryptographicHash>
 
 Crypt::Crypt() {}
 
@@ -81,4 +82,10 @@ QByteArray Crypt::generateIv()
 	for (int i = 0; i < byteIv.size(); ++i)
 		byteIv[i] = rand() & 0xff;
 	return byteIv;
+}
+
+QString Crypt::passwordHash(const QString& password)
+{
+	QString hash = std::move(QString(QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex()));
+	return hash;
 }

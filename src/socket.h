@@ -12,9 +12,10 @@ class Socket : public QObject
 
 private:
 	QWebSocket socket_;
+	bool secure_ = false;
 
 public:
-	Socket();
+	Socket(bool secure = false);
 	~Socket();
 
 signals:
@@ -27,6 +28,9 @@ private slots:
 	void textMessageReceived(const QString &message);
 	void errorOccurred(QAbstractSocket::SocketError error);
 	void sslErrors(const QList<QSslError> &errors);
+
+private:
+	bool setSslConfiguration();
 
 public:
 	bool open();

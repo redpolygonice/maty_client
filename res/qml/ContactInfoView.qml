@@ -23,39 +23,49 @@ Rectangle {
 		spacing: 0
 		Layout.margins: 0
 
-		RowLayout {
-			Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-			Layout.maximumHeight: 40
+		Rectangle {
+			Layout.fillWidth: true
+			Layout.fillHeight: false
 			Layout.minimumHeight: 40
-			spacing: 10
+			Layout.maximumHeight: 40
+			Layout.margins: 0
+			height: 40
 
-			PanelButton {
+			RowLayout {
+				anchors.fill: parent
 				Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-				text: "<b>....</b>"
-				backcolor: "#ffffff"
-				onClicked: {
+				Layout.margins: 0
+				spacing: 10
+
+				Label {
+					Layout.fillWidth: true
 				}
-			}
 
-			PanelButton {
-				Layout.rightMargin: 10
-				Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-				text: "<b>X</b>"
-				backcolor: "#ffffff"
-				onClicked: {
-					contactInfo.visible = false
+				PanelButton {
+					text: "<b>....</b>"
+					backcolor: "#ffffff"
+					onClicked: {
+					}
+				}
+
+				PanelButton {
+					Layout.rightMargin: 10
+					text: "<b>X</b>"
+					backcolor: "#ffffff"
+					onClicked: {
+						contactInfo.visible = false
+					}
 				}
 			}
 		}
 
 		Rectangle {
-			id: topRect
 			color: Theme.backColor4
-			width: contactInfo.width
 			height: 80
 			Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 			Layout.margins: 0
 			Layout.fillWidth: true
+			Layout.fillHeight: false
 
 			RowLayout {
 				anchors.fill: parent
@@ -88,28 +98,37 @@ Rectangle {
 			}
 		}
 
-		Grid {
+		GridLayout {
 			columns: 2
 			rows: 3
-			spacing: 10
-			Layout.maximumHeight: 80
-			Layout.minimumHeight: 80
 			Layout.topMargin: 10
 			Layout.leftMargin: 15
+			Layout.rightMargin: 15
 			Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+			Layout.fillWidth: true
 
 			Text {
 				text: "Name:"
 				color: Theme.textColor
 				font.pointSize: Theme.fontPointSize
 				font.bold: true
+				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+				Layout.margins: 0
 			}
 
-			Text {
+			TextField {
 				id: textName
+				readOnly: self === false
 				text: ""
 				color: Theme.textColor
 				font.pointSize: Theme.fontPointSize
+				implicitHeight: 30
+				implicitWidth: 250
+				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+				Layout.margins: 0
+				background: Rectangle {
+					color: Theme.backColor4
+				}
 			}
 
 			Text {
@@ -117,13 +136,23 @@ Rectangle {
 				color: Theme.textColor
 				font.pointSize: Theme.fontPointSize
 				font.bold: true
+				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+				Layout.margins: 0
 			}
 
-			Text {
+			TextField {
 				id: textLogin
+				readOnly: true
 				text: ""
 				color: Theme.textColor
 				font.pointSize: Theme.fontPointSize
+				implicitHeight: 30
+				implicitWidth: 250
+				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+				Layout.margins: 0
+				background: Rectangle {
+					color: Theme.backColor4
+				}
 			}
 
 			Text {
@@ -131,13 +160,22 @@ Rectangle {
 				color: Theme.textColor
 				font.pointSize: Theme.fontPointSize
 				font.bold: true
+				Layout.margins: 0
 			}
 
-			Text {
+			TextField {
 				id: textPhone
+				readOnly: self === false
 				text: ""
 				color: Theme.textColor
 				font.pointSize: Theme.fontPointSize
+				implicitHeight: 30
+				implicitWidth: 250
+				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+				Layout.margins: 0
+				background: Rectangle {
+					color: Theme.backColor4
+				}
 			}
 		}
 
@@ -146,25 +184,61 @@ Rectangle {
 			color: Theme.textColor
 			font.pointSize: Theme.fontPointSize
 			font.bold: true
+			Layout.topMargin: 10
 			Layout.leftMargin: 15
-			Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+			Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 		}
 
 		TextArea {
 			id: textAbout
+			readOnly: self === false
 			text: ""
 			placeholderText: "About"
-			readOnly: self == false
-			Layout.preferredHeight: 80
 			Layout.fillWidth: true
+			Layout.minimumHeight: 150
+			Layout.topMargin: 10
 			Layout.leftMargin: 15
 			Layout.rightMargin: 15
+			Layout.bottomMargin: 15
 			Layout.alignment: Qt.AlignLeft | Qt.AlignTop
 			wrapMode: Text.Wrap
 			font.pointSize: Theme.fontPointSize
 			color: Theme.textColor
 			background: Rectangle {
 				color: Theme.backColor4
+			}
+		}
+
+		Rectangle {
+			Layout.fillHeight: true
+		}
+
+		Rectangle {
+			id: bottomRect
+			Layout.fillWidth: true
+			Layout.minimumHeight: 50
+			Layout.alignment: Qt.AlignRight | Qt.AlignBottom
+
+			RowLayout {
+				anchors.fill: parent
+				Layout.margins: 0
+				spacing: 10
+
+				LabelButton {
+					id: buttonSave
+					visible: self === true
+					backcolor: "#eeeeee"
+					backcolorhover: "#dddddd"
+					beam: 100
+					text: "Save"
+					Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+					Layout.rightMargin: 10
+					Layout.bottomMargin: 10
+
+					onClicked: {
+						save()
+					}
+				}
 			}
 		}
 	}
@@ -184,24 +258,32 @@ Rectangle {
 		if (contactMap === null)
 			return
 
-		var image = contactMap["image"]
-		if (image === null || image === 'empty' ||
-				image.length === 0 || image === undefined)
+		var imageName = contactMap["image"]
+		if (imageName === null || imageName === 'empty' ||
+				imageName === undefined || imageName.length === 0)
 			contactMiniImage.imgsource =  "qrc:///img/user.png"
 		else
 		{
-			if (contactsView.currentModel === searchModel)
-				contactMiniImage.imgsource = "file:///" + settings.tempPath() + "/" + image
+			if (self)
+				contactMiniImage.imgsource = "file:///" + settings.imagePath() + "/" + imageName
+			else if (contactsView.currentModel === searchModel)
+				contactMiniImage.imgsource = "file:///" + settings.tempPath() + "/" + imageName
 			else
-				contactMiniImage.imgsource = "file:///" + settings.imagePath() + "/" + image
+				contactMiniImage.imgsource = "file:///" + settings.imagePath() + "/" + imageName
 		}
 
 		textName.text = contactMap["name"]
 		textLogin.text = contactMap["login"]
 		textPhone.text = contactMap["phone"]
+		textAbout.text = contactMap["about"]
 	}
 
 	function save()
 	{
+		contactMap["name"] = textName.text
+		contactMap["login"] = textLogin.text
+		contactMap["phone"] = textPhone.text
+		contactMap["about"] = textAbout.text
+		dispatcher.modifySelf(contactMap)
 	}
 }

@@ -6,6 +6,19 @@
 #include <QFile>
 #include <QDir>
 
+QString Image::convertToBase64(const QString& fileName)
+{
+	QFile file(fileName);
+	if (!file.open(QIODevice::ReadOnly))
+	{
+		LOGW("Can't open image file " << fileName.toStdString());
+		return "";
+	}
+
+	QByteArray imageData = file.readAll();
+	return QString(imageData.toBase64());
+}
+
 QString Image::convertToBase64(const QString& fileName, QString& newName)
 {
 	QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);

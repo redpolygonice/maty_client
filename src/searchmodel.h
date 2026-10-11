@@ -16,6 +16,7 @@ public:
 		LoginRole,
 		ImageRole,
 		PhoneRole,
+		AboutRole,
 		DateRole
 	};
 

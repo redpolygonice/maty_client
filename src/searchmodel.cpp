@@ -12,6 +12,7 @@ SearchModel::SearchModel(QObject *parent)
 	roleNames_[LoginRole] = "login";
 	roleNames_[ImageRole] = "image";
 	roleNames_[PhoneRole] = "phone";
+	roleNames_[AboutRole] = "about";
 }
 
 void SearchModel::update(const QJsonObject &root)
@@ -28,8 +29,9 @@ void SearchModel::update(const QJsonObject &root)
 		item->setData(object["id"].toInt(), IdRole);
 		item->setData(object["name"].toString(), NameRole);
 		item->setData(object["login"].toString(), LoginRole);
-		item->setData(object["image"].toString(), ImageRole);
+		item->setData(object["image_name"].toString(), ImageRole);
 		item->setData(object["phone"].toString(), PhoneRole);
+		item->setData(object["about"].toString(), AboutRole);
 		appendRow(item);
 	}
 
@@ -40,7 +42,8 @@ QVariant SearchModel::data(const QModelIndex &index, int role) const
 {
 	QStandardItem *item = itemFromIndex(index);
 
-	if (role == IdRole || role == NameRole || role == LoginRole || role == ImageRole || role == PhoneRole)
+	if (role == IdRole || role == NameRole || role == LoginRole || role == ImageRole ||
+		role == PhoneRole || role == AboutRole)
 		return item->data(role);
 
 	return QVariant();
@@ -53,7 +56,8 @@ QVariantMap SearchModel::card(int row)
 		{"name", ""},
 		{"login", ""},
 		{"image", ""},
-		{"phone", ""}
+		{"phone", ""},
+		{"about", ""}
 	};
 
 	if (row < 0)
@@ -65,9 +69,10 @@ QVariantMap SearchModel::card(int row)
 
 	contact["id"] = item->data(IdRole);
 	contact["name"] = item->data(NameRole);
-	contact["login"] = item-> data(LoginRole);
+	contact["login"] = item->data(LoginRole);
 	contact["image"] = item->data(ImageRole);
 	contact["phone"] = item->data(PhoneRole);
+	contact["about"] = item->data(AboutRole);
 
 	return contact;
 }

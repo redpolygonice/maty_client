@@ -6,6 +6,7 @@
 class Image
 {
 public:
+	static QString convertToBase64(const QString &fileName);
 	static QString convertToBase64(const QString &fileName, QString &newName);
 	static QString convertFromBase64(const QString &base64, const QString &dir);
 };

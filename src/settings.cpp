@@ -128,8 +128,10 @@ bool Settings::load()
 		params_["login"] = authObject["login"].toString();
 		params_["password"] = authObject["password"].toString();
 		params_["name"] = authObject["name"].toString();
-		params_["image"] = authObject["image"].toString();
+		params_["image_name"] = authObject["image_name"].toString();
+		params_["image_hash"] = authObject["image_hash"].toString();
 		params_["phone"] = authObject["phone"].toString();
+		params_["about"] = authObject["about"].toString();
 	}
 
 	QJsonObject netObject = rootObject["Net"].toObject();
@@ -160,8 +162,10 @@ bool Settings::save()
 	authObject["login"] = params_["login"].toString();
 	authObject["password"] = params_["password"].toString();
 	authObject["name"] = params_["name"].toString();
-	authObject["image"] = params_["image"].toString();
+	authObject["image_name"] = params_["image_name"].toString();
+	authObject["image_hash"] = params_["image_hash"].toString();
 	authObject["phone"] = params_["phone"].toString();
+	authObject["about"] = params_["about"].toString();
 	rootObject["Auth"] = authObject;
 
 	QJsonObject netObject;
@@ -189,3 +193,19 @@ void Settings::saveAuthData(const QVariantMap &map)
 		params_["password"] = encrypted.toHex();
 	}
 }
+
+
+QString Settings::certPath()
+{
+	QDir appDir = QCoreApplication::applicationDirPath();
+
+	if (isQtCreatorParentProc())
+		appDir.cdUp();
+
+	QDir dataDir = dataPath() + QDir::separator() + "cert";
+	if (!dataDir.exists())
+		dataDir.mkpath(".");
+
+	return dataDir.path();
+}
+

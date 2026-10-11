@@ -1,5 +1,5 @@
-#ifndef Theme_H
-#define Theme_H
+#ifndef COMMON_H
+#define COMMON_H
 
 #include <string>
 
@@ -9,4 +9,4 @@ int64_t timestamp();
 int64_t timestamp_micro();
 bool isQtCreatorParentProc();
 
-#endif // Theme_H
+#endif // COMMON_H

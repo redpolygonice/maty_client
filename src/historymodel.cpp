@@ -34,7 +34,7 @@ void HistoryModel::update(int cid)
 		return;
 
 	setQuery("SELECT history.id, history.cid, history.rid, history.text, history.ts,"
-			 " contacts.name AS name, contacts.image AS image"
+			 " contacts.name AS name, contacts.image_name AS image"
 			 " FROM " + QString(kHistoryName) +
 			 " LEFT JOIN " + QString(kContactsName) + " ON (contacts.id = rid OR contacts.id = cid)"
 			 " WHERE rid = " + QString::number(cid) +

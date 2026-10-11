@@ -14,6 +14,7 @@ public:
 	void decrypt(const QByteArray &in, QString &out);
 	QByteArray encrypt(const QString &text);
 	QString decrypt(const QByteArray &data);
+	QString passwordHash(const QString& password);
 
 private:
 	QByteArray generateKey();

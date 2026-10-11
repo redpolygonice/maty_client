@@ -217,7 +217,7 @@ Window {
 		}
 
 		dispatcher.regContact({ "name": nameText.text, "login": loginText.text,
-								  "password": passwordText.text, "image": imageFile, "phone": phoneText.text });
+								  "password": passwordText.text, "image_name": imageFile, "phone": phoneText.text });
 
 		dispatcher.onReg.connect(function(code) {
 			if (code === 0)

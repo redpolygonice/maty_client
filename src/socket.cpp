@@ -3,9 +3,15 @@
 #include "log.h"
 
 #include <QUrl>
+#include <QFile>
+#include <QDir>
+#include <QSslKey>
 
-Socket::Socket()
+Socket::Socket(bool secure)
+	: secure_(secure)
 {
+	if (secure_)
+		setSslConfiguration();
 }
 
 Socket::~Socket()
@@ -15,7 +21,11 @@ Socket::~Socket()
 
 bool Socket::open()
 {
-	QUrl url = "ws://" + GetSettings()->params()["server1"].toString() + ":" +
+	QString protocol = "ws://";
+	if (secure_)
+		protocol = "wss://";
+
+	QUrl url = protocol + GetSettings()->params()["server1"].toString() + ":" +
 		GetSettings()->params()["port"].toString();
 
 	connect(&socket_, &QWebSocket::connected, this, &Socket::connected);
@@ -23,6 +33,7 @@ bool Socket::open()
 	connect(&socket_, &QWebSocket::errorOccurred, this, &Socket::errorOccurred);
 	connect(&socket_, &QWebSocket::sslErrors, this, &Socket::sslErrors);
 
+	socket_.ignoreSslErrors();
 	socket_.open(url);
 	return true;
 }
@@ -59,5 +70,36 @@ void Socket::errorOccurred(QAbstractSocket::SocketError error)
 
 void Socket::sslErrors(const QList<QSslError> &errors)
 {
-	LOGE("WebSocket Ssl error!");
+	LOGE("WebSocket Ssl errors:");
+	for (const QSslError& error : errors)
+		LOGE(error.errorString().toStdString());
+}
+
+bool Socket::setSslConfiguration()
+{
+	QSslConfiguration sslConfiguration;
+
+	QFile certFile(GetSettings()->certPath() + QDir::separator() + kCertName);
+	if (!certFile.open(QIODevice::ReadOnly))
+	{
+		LOGE("Can't open cert file!");
+		return false;
+	}
+
+	QFile keyFile(GetSettings()->certPath() + QDir::separator() + kKeyName);
+	if (!keyFile.open(QIODevice::ReadOnly))
+	{
+		LOGE("Can't open key file!");
+		return false;
+	}
+
+	QSslCertificate certificate(&certFile, QSsl::Pem);
+	sslConfiguration.setLocalCertificate(certificate);
+
+	QSslKey privateKey(&keyFile, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey);
+	sslConfiguration.setPrivateKey(privateKey);
+
+	sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone);
+	socket_.setSslConfiguration(sslConfiguration);
+	return true;
 }

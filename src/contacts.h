@@ -19,7 +19,8 @@ public:
 
 public:
 	static ContactsServicePtr create() { return ContactsServicePtr::create(); }
-	void add(QVariantMap &data);
+	void add(const QVariantMap&data);
+	void modifySelf(const QVariantMap&data);
 	void addSearch(const QVariantMap &data);
 	void remove(const QVariantMap &data);
 	void search(const QString &text);

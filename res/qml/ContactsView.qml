@@ -263,7 +263,7 @@ Rectangle {
 			text: "Add contact"
 			enabled: currentModel === searchModel
 			onTriggered: {
-				dispatcher.addSearchContact(currentModel.card(currentIndex))
+				addContact()
 			}
 		}
 
@@ -339,6 +339,13 @@ Rectangle {
 		}
 	}
 
+	function addContact()
+	{
+		dispatcher.addSearchContact(currentModel.card(currentIndex))
+		contactsModel.update()
+		listView.currentIndex = currentIndex
+	}
+
 	function removeContact()
 	{
 		dispatcher.removeContact(currentModel.card(currentIndex))
@@ -356,15 +363,10 @@ Rectangle {
 
 	function setContactInfo()
 	{
-		if (settings.params["image"] === undefined || settings.params["image"] === "")
+		if (settings.params["image_name"] === undefined || settings.params["image_name"] === "")
 			contactImageSrc = ""
 		else
-		{
-			if (currentModel === searchModel)
-				contactImageSrc = "file:///" + settings.tempPath() + "/" + settings.params["image"]
-			else
-				contactImageSrc = "file:///" + settings.imagePath() + "/" + settings.params["image"]
-		}
+			contactImageSrc = "file:///" + settings.imagePath() + "/" + settings.params["image_name"]
 
 		if (settings.params["name"] === undefined || settings.params["name"] === "")
 			contactNameText = ""

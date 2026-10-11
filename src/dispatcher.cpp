@@ -2,7 +2,6 @@
 #include "database.h"
 #include "log.h"
 #include "settings.h"
-#include "crypt.h"
 #include "image.h"
 
 #include <QDebug>
@@ -16,7 +15,7 @@ Dispatcher::Dispatcher(QObject *parent)
 	, connected_(false)
 	, update_(true)
 	, rootItem_(nullptr)
-	, socket_(QSharedPointer<Socket>::create())
+	, socket_(QSharedPointer<Socket>::create(true))
 	, contacts_(ContactsService::create())
 	, history_(HistoryService::create())
 {
@@ -32,6 +31,7 @@ bool Dispatcher::start(QObject *rootItem)
 	rootItem_ = rootItem;
 	socket_->open();
 	connect(socket_.get(), &Socket::opened, this, &Dispatcher::connected, Qt::QueuedConnection);
+	QDir(GetSettings()->tempPath()).removeRecursively();
 	return true;
 }
 
@@ -59,13 +59,23 @@ void Dispatcher::regContact(const QVariantMap &data)
 		QJsonObject object = QJsonObject::fromVariantMap(data);
 		object["action"] = static_cast<int>(Action::Registration);
 
-		if (!object["image"].toString().isEmpty())
+		if (!object["image_name"].toString().isEmpty())
 		{
 			QString newName;
-			object["image"] = Image::convertToBase64(object["image"].toString(), newName);
-			GetSettings()->params()["image"] = newName;
-			GetSettings()->save();
+			QString imageData = std::move(Image::convertToBase64(object["image_name"].toString(), newName));
+			QString imageHash = std::move(QString(QCryptographicHash::hash(imageData.toUtf8(),
+				QCryptographicHash::Sha256).toHex()));
+			object["image_data"] = imageData;
+			object["image_hash"] = imageHash;
+			GetSettings()->params()["image_name"] = newName;
+			GetSettings()->params()["image_hash"] = imageHash;
+			object.remove("image_name");
 		}
+
+		GetSettings()->params()["password"] = std::move(QString(crypt_.encrypt(data["password"].toString()).toHex()));
+		GetSettings()->save();
+		object["password"] = std::move(QString(QCryptographicHash::hash(data["password"].toString().toUtf8(),
+			QCryptographicHash::Sha256).toHex()));
 
 		LOG("Reg, login: " << object["login"].toString().toStdString());
 		if (static_cast<ConnectState>(connectWatcher_.result()) == ConnectState::Connected)
@@ -83,12 +93,21 @@ void Dispatcher::authContact(const QVariantMap &data)
 		object["id"] = GetSettings()->params()["id"].toInt();
 		object["querydata"] = (object["id"].toInt() == 0);
 
+		QString password;
 		if (object["autologin"].toBool())
 		{
-			Crypt crypt;
-			QByteArray encrypted = QByteArray::fromHex(data["password"].toString().toLocal8Bit());
-			object["password"] = crypt.decrypt(encrypted);
+			QString encrypted = GetSettings()->params()["password"].toString();
+			QString decrypted = crypt_.decrypt(QByteArray::fromHex(encrypted.toUtf8()));
+			password = std::move(QString(QCryptographicHash::hash(decrypted.toUtf8(),
+				QCryptographicHash::Sha256).toHex()));
 		}
+		else
+		{
+			password = std::move(QString(QCryptographicHash::hash(data["password"].toString().toUtf8(),
+				QCryptographicHash::Sha256).toHex()));
+		}
+
+		object["password"] = password;
 
 		LOG("Auth, login: " << object["login"].toString().toStdString());
 		if (static_cast<ConnectState>(connectWatcher_.result()) == ConnectState::Connected)
@@ -114,44 +133,23 @@ void Dispatcher::processMessage(const QString &message)
 	Action action = static_cast<Action>(rootObject["action"].toInt());
 
 	if (action == Action::Registration)
-	{
 		actionReg(rootObject);
-	}
-
 	else if (action == Action::Auth)
-	{
 		actionAuth(rootObject);
-	}
-
 	else if (action == Action::Search)
-	{
 		contacts_->actionSearch(rootObject);
-	}
-
 	else if (action == Action::QueryContact)
-	{
 		contacts_->actionQuery(rootObject);
-	}
-
+	else if (action == Action::ModifyContact)
+		contacts_->actionQuery(rootObject);
 	else if (action == Action::NewHistory)
-	{
 		history_->actionNew(rootObject);
-	}
-
 	else if (action == Action::ModifyHistory)
-	{
 		history_->actionModify(rootObject);
-	}
-
 	else if (action == Action::RemoveHistory)
-	{
 		history_->actionRemove(rootObject);
-	}
-
 	else if (action == Action::ClearHistory)
-	{
 		history_->actionClear(rootObject);
-	}
 }
 
 void Dispatcher::actionReg(const QJsonObject &root)
@@ -184,13 +182,16 @@ void Dispatcher::actionUpdateAll(const QJsonObject& root)
 {
 	GetDatabase()->remove();
 	GetDatabase()->open();
+	QDir(GetSettings()->imagePath()).removeRecursively();
 
 	// Self contact
 	GetSettings()->params()["id"] = root["id"].toInt();
 	GetSettings()->params()["name"] = root["name"].toString();
 	GetSettings()->params()["login"] = root["login"].toString();
-	GetSettings()->params()["image"] = Image::convertFromBase64(root["image"].toString(), GetSettings()->imagePath());
+	GetSettings()->params()["image_name"] = Image::convertFromBase64(root["image_data"].toString(), GetSettings()->imagePath());
+	GetSettings()->params()["image_hash"] = root["image_hash"].toString();
 	GetSettings()->params()["phone"] = root["phone"].toString();
+	GetSettings()->params()["about"] = root["about"].toString();
 	GetSettings()->save();
 
 	// Link contacts
@@ -198,7 +199,7 @@ void Dispatcher::actionUpdateAll(const QJsonObject& root)
 	for (const QJsonValue &link : links)
 	{
 		QJsonObject object = link.toObject();
-		object["image"] = Image::convertFromBase64(object["image"].toString(), GetSettings()->imagePath());
+		object["image_name"] = Image::convertFromBase64(object["image_data"].toString(), GetSettings()->imagePath());
 		if (!GetDatabase()->appendContact(object.toVariantMap()))
 		{
 			LOGW("Can't link contact!");
@@ -218,7 +219,7 @@ void Dispatcher::actionUpdateAll(const QJsonObject& root)
 
 void Dispatcher::logMessage(const QString& message)
 {
-	if (!message.contains("\"image\""))
+	if (!message.contains("image_data"))
 	{
 		LOG("Message received: " << message.toStdString());
 		return;
@@ -234,21 +235,35 @@ void Dispatcher::logMessage(const QString& message)
 
 	QJsonObject rootObject = document.object();
 
-	if (rootObject["image"].isString())
-		rootObject["image"] = "base64";
+	if (rootObject.contains("image_data"))
+		rootObject["image_data"] = "base64";
 
-	if (rootObject["links"].isArray())
+	if (rootObject.contains("links"))
 	{
 		QJsonArray newLinks;
 		QJsonArray links = rootObject["links"].toArray();
 		for (const QJsonValue &link : links)
 		{
 			QJsonObject object = link.toObject();
-			object["image"] = "base64";
+			object["image_data"] = "base64";
 			newLinks.push_back(object);
 		}
 
 		rootObject["links"] = newLinks;
+	}
+
+	if (rootObject.contains("contacts"))
+	{
+		QJsonArray newContacts;
+		QJsonArray contactsArray = rootObject["contacts"].toArray();
+		for (const QJsonValue &contact : contactsArray)
+		{
+			QJsonObject object = contact.toObject();
+			object["image_data"] = "base64";
+			newContacts.push_back(object);
+		}
+
+		rootObject["contacts"] = newContacts;
 	}
 
 	LOG("Message received: " <<

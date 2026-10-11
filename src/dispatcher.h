@@ -5,6 +5,7 @@
 #include "searchmodel.h"
 #include "contacts.h"
 #include "history.h"
+#include "crypt.h"
 
 #include <QObject>
 #include <QThread>
@@ -24,6 +25,7 @@ enum class Action
 	Message,
 	Search,
 	QueryContact,
+	ModifyContact,
 	LinkContact,
 	UnlinkContact,
 	AddHistory,
@@ -70,6 +72,7 @@ private:
 	ContactsServicePtr contacts_;
 	HistoryServicePtr history_;
 	QFutureWatcher<int> connectWatcher_;
+	Crypt crypt_;
 
 private:
 	explicit Dispatcher(QObject *parent = nullptr);
@@ -104,7 +107,8 @@ public:
 	Q_INVOKABLE void regContact(const QVariantMap &data);
 	Q_INVOKABLE void authContact(const QVariantMap &data);
 	Q_INVOKABLE bool isConnected() const { return connected_; }
-	Q_INVOKABLE void addContact(QVariantMap &data) { contacts_->add(data); }
+	Q_INVOKABLE void addContact(const QVariantMap &data) { contacts_->add(data); }
+	Q_INVOKABLE void modifySelf(const QVariantMap &data) { contacts_->modifySelf(data); }
 	Q_INVOKABLE void addSearchContact(const QVariantMap &data) { contacts_->addSearch(data); }
 	Q_INVOKABLE void removeContact(const QVariantMap &data) { contacts_->remove(data); }
 	Q_INVOKABLE void searchContact(const QString &text) { contacts_->search(text); }
