@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Dialogs
+import QtQuick.Controls.Basic
 
 Menu {
 	id: menu

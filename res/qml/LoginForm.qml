@@ -15,8 +15,8 @@ Window {
 	flags: Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
 
 	onClosing: (close) => {
-		Qt.quit()
-	}
+				   Qt.quit()
+			   }
 
 	Component.onCompleted: {
 		load()
@@ -71,8 +71,8 @@ Window {
 				}
 
 				Keys.onPressed: (event) => {
-					onKeyPressed(event.key)
-				}
+									onKeyPressed(event.key)
+								}
 			}
 
 			Text {
@@ -93,20 +93,36 @@ Window {
 				}
 
 				Keys.onPressed: (event) => {
-					onKeyPressed(event.key)
-				}
+									onKeyPressed(event.key)
+								}
 			}
 
 			CheckBox {
 				id: autologinCheck
 				text: "Autologin"
 				checked: false
+				Layout.topMargin: 5
 				contentItem: Text {
 					text: autologinCheck.text
-					color: enabled ? Theme.textColor : "grey"
 					font.pointSize: Theme.fontPointSize
 					verticalAlignment: Text.AlignVCenter
 					leftPadding: 40
+				}
+				indicator: Rectangle {
+					x: 0
+					y: autologinCheck.height / 2 - height / 2
+					implicitWidth: 28
+					implicitHeight: 28
+					color: Theme.backColor1
+
+					Rectangle {
+						width: 15
+						height: 15
+						x: 7
+						y: 7
+						color: autologinCheck.down ? Theme.backColor4 : Theme.textColor
+						visible: autologinCheck.checked
+					}
 				}
 			}
 
@@ -182,7 +198,7 @@ Window {
 		if (autologinCheck.checked)
 		{
 			settings.saveAuthData({ "autologin": autologinCheck.checked, "login": loginText.text,
-									   "password": passwordText.text });
+									  "password": passwordText.text });
 		}
 		else
 		{

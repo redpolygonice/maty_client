@@ -76,3 +76,8 @@ QVariantMap SearchModel::card(int row)
 
 	return contact;
 }
+
+void SearchModel::reset()
+{
+	clear();
+}

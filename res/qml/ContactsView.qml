@@ -18,6 +18,20 @@ Rectangle {
 	property string contactImageSrc: ""
 	property string contactNameText: ""
 	property variant currentModel: contactsModel
+	property int headerHeight: 125
+
+	Text {
+		id: labelSearch
+		visible: false
+		padding: 0
+		width: listView.width
+		height: 30
+		x: listView.width / 2 - width / 2
+		y: (listView.height + headerHeight) / 2 - height / 2
+		text: "Not found"
+		horizontalAlignment: Qt.AlignHCenter
+		verticalAlignment: Qt.AlignVCenter
+	}
 
 	Component {
 		id: delegate
@@ -78,7 +92,7 @@ Rectangle {
 
 							   if (mouse.button === Qt.RightButton)
 							   {
-									contextMenu.popup()
+								   contextMenu.popup()
 							   }
 							   else
 							   {
@@ -114,17 +128,21 @@ Rectangle {
 		Component.onCompleted: {
 			listView.currentIndex = -1
 			dispatcher.onSearchResult.connect(function(result) {
+				currentModel = searchModel;
 				if (result === 0)
-					currentModel = searchModel;
+					labelSearch.visible = false
 				else
-					currentModel = contactsModel;
+				{
+					searchModel.reset()
+					labelSearch.visible = true
+				}
 			})
 		}
 
 		header: ToolBar {
 			id: toolbar
 			width: parent.width
-			height: 125
+			height: headerHeight
 
 			background: Rectangle {
 				color: Theme.backColor1
@@ -158,12 +176,7 @@ Rectangle {
 								hoverEnabled: true
 								cursorShape: Qt.PointingHandCursor
 								onClicked: {
-									hideContactImage()
-									hideContactInfo()
-									contactInfo.parent = contentRect
-									contactInfo.self = true
-									contactInfo.contactMap = dispatcher.selfContactInfo()
-									showContactInfo();
+									showContact(true)
 								}
 							}
 						}
@@ -224,8 +237,12 @@ Rectangle {
 							text: "<b>X</b>"
 							onClicked: {
 								searchText.text = ""
-								contactsModel.update()
-								currentModel = contactsModel
+								labelSearch.visible = false
+								if (currentModel === searchModel)
+								{
+									contactsModel.update()
+									currentModel = contactsModel
+								}
 							}
 						}
 					}
@@ -250,12 +267,7 @@ Rectangle {
 		Action {
 			text: "Contact info"
 			onTriggered: {
-				hideContactImage()
-				hideContactInfo()
-				contactInfo.parent = contentRect
-				contactInfo.self = false
-				contactInfo.contactMap = currentModel.card(currentIndex)
-				showContactInfo();
+				showContact(false)
 			}
 		}
 
@@ -337,6 +349,19 @@ Rectangle {
 				clearHistory()
 			}
 		}
+	}
+
+	function showContact(self)
+	{
+		hideContactImage()
+		hideContactInfo()
+		contactInfo.parent = contentRect
+		contactInfo.self = self
+		if (!self)
+			contactInfo.contactMap = currentModel.card(currentIndex)
+		else
+			contactInfo.contactMap = dispatcher.selfContactInfo()
+		showContactInfo();
 	}
 
 	function addContact()

@@ -59,6 +59,9 @@ void ContactsService::modifySelf(const QVariantMap& data)
 
 void ContactsService::addSearch(const QVariantMap& data)
 {
+	if (data["id"].toInt() == GetSettings()->params()["id"].toInt())
+		return;
+
 	QString imageName = data["image"].toString();
 	QString oldName = GetSettings()->tempPath() + QDir::separator() + imageName;
 	QString newName = GetSettings()->imagePath() + QDir::separator() + imageName;
@@ -142,7 +145,7 @@ QVariantMap ContactsService::selfInfo() const
 
 void ContactsService::actionSearch(QJsonObject& root)
 {
-	SearchResult result = static_cast<SearchResult>(root["searchResult"].toInt());
+	SearchResult result = static_cast<SearchResult>(root["result"].toInt());
 	if (result == SearchResult::Found)
 	{
 		QJsonArray contactsArray = root["contacts"].toArray();

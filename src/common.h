@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <string>
+#include <stdint.h>
 
 std::string currentTime();
 std::string currentTimeMs();

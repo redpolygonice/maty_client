@@ -34,6 +34,7 @@ public:
 
 public:
 	Q_INVOKABLE QVariantMap card(int row);
+	Q_INVOKABLE void reset();
 
 public:
 	void update(const QJsonObject &root);

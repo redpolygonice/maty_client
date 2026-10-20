@@ -30,8 +30,9 @@ Dialog {
 	signal yesClicked()
 
 	background: Rectangle {
-		color: "#FFFFFF"
+		color: Theme.backColor4
 		radius: 15
+		border.color: Theme.backColor1
 	}
 
 	ColumnLayout {
@@ -57,12 +58,16 @@ Dialog {
 				Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 				horizontalAlignment: Text.AlignHCenter
 				verticalAlignment: Text.AlignVCenter
+				background: Rectangle {
+					color: Theme.backColor4
+				}
 			}
 		}
 
 		Rectangle {
 			Layout.fillHeight: true
 			Layout.fillWidth: true
+			color: Theme.backColor4
 
 			RowLayout {
 				anchors.fill: parent
